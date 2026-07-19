@@ -1,0 +1,21 @@
+{
+  "name": "fischerpruefung-bayern-2026",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:cloudflare": "opennextjs-cloudflare build",
+    "preview": "opennextjs-cloudflare preview"
+  },
+  "dependencies": {
+    "next": "^16.2.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@opennextjs/cloudflare": "^1.15.0",
+    "wrangler": "^4.0.0"
+  },
+  "packageManager": "pnpm@10.4.1"
+}

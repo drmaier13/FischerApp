@@ -1,0 +1,10 @@
+onlyBuiltDependencies:
+  - esbuild
+  - sharp
+  - workerd
+confirmModulesPurge: false
+nodeLinker: hoisted
+allowBuilds:
+  esbuild: set this to true or false
+  sharp: set this to true or false
+  workerd: set this to true or false
