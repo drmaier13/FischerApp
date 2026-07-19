@@ -40,6 +40,15 @@ function FishMark({ small = false }) {
   );
 }
 
+function BrandLockup({ light = false, small = false }) {
+  return (
+    <div className={`brand ${light ? "brand--light" : ""}`}>
+      <FishMark small={small} />
+      <span className="brand-copy">Angelschule Bayern <small>– PrüfungsApp</small></span>
+    </div>
+  );
+}
+
 function shuffle(items) {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {
@@ -80,7 +89,7 @@ function LoginScreen({ onAuthenticated }) {
   return (
     <main className="login-shell">
       <section className="login-visual">
-        <div className="brand brand--light"><FishMark />FischerKlar</div>
+        <BrandLockup light />
         <div className="login-copy">
           <span className="eyebrow eyebrow--light">Fischerprüfung Bayern 2026</span>
           <h1>Mit System lernen.<br />Mit Sicherheit bestehen.</h1>
@@ -99,7 +108,7 @@ function LoginScreen({ onAuthenticated }) {
       </section>
 
       <section className="login-panel">
-        <div className="mobile-brand brand"><FishMark small />FischerKlar</div>
+        <div className="mobile-brand"><BrandLockup small /></div>
         <div className="login-card">
           <span className="eyebrow">Dein Lernkonto</span>
           <h2>{mode === "login" ? "Willkommen zurück" : "Jetzt Lernkonto anlegen"}</h2>
@@ -167,7 +176,7 @@ function Dashboard({ account, questions, learning, onStart, onLogout }) {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <div className="brand"><FishMark small />FischerKlar</div>
+        <BrandLockup small />
         <nav>
           <button className="nav-item active"><span>⌂</span>Übersicht</button>
           <button className="nav-item" onClick={() => onStart({ type: "learn" })}><span>◉</span>Lernen</button>

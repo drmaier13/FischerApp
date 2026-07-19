@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Fischerprüfung Bayern 2026",
+  title: "Angelschule Bayern - PrüfungsApp",
   description: "Mit allen offiziellen Prüfungsfragen für die Fischerprüfung in Bayern lernen.",
 };
 

@@ -1,4 +1,4 @@
-# FischerKlar
+# Angelschule Bayern - PrüfungsApp
 
 Lern-App für den offiziellen Fragenkatalog der Fischerprüfung in Bayern 2026.
 
