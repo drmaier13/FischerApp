@@ -67,6 +67,7 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(238, 120, 95
 .login-card input::placeholder { color: #a2afaf; }
 .login-card input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(42, 123, 120, .1); outline: none; }
 .form-error { padding: 11px 13px; border-radius: 9px; background: #fff0ed; color: #a73d32; font-size: 13px; }
+.form-notice { padding: 11px 13px; border-radius: 9px; background: #e9f5f1; color: #24645e; font-size: 13px; line-height: 1.45; }
 .local-note { display: flex; gap: 11px; margin-top: 22px; padding: 14px; border-radius: 10px; background: #edf5f2; color: #557270; }
 .local-note > span { display: flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid #83aaa4; border-radius: 50%; font-family: Georgia, serif; font-size: 12px; font-weight: 800; }
 .local-note p { margin: 0; font-size: 11px; line-height: 1.55; }

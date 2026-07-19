@@ -8,6 +8,7 @@ import {
   logoutAccount,
   registerAccount,
   saveLearningState,
+  subscribeToAccount,
 } from "@/lib/local-account";
 
 const CORE_CATEGORIES = [
@@ -67,18 +68,30 @@ function LoginScreen({ onAuthenticated }) {
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
 
   async function submit(event) {
     event.preventDefault();
     setError("");
+    setNotice("");
     if (form.password.length < 8) {
       setError("Das Passwort muss mindestens 8 Zeichen lang sein.");
       return;
     }
     setBusy(true);
     try {
-      const account = mode === "register" ? await registerAccount(form) : await loginAccount(form);
-      onAuthenticated(account);
+      if (mode === "register") {
+        const result = await registerAccount(form);
+        if (result.requiresConfirmation) {
+          setNotice("Dein Konto wurde angelegt. Bitte bestätige jetzt den Link in der E-Mail und melde dich anschließend an.");
+          setMode("login");
+          setForm((current) => ({ ...current, password: "" }));
+        } else {
+          onAuthenticated(result.account);
+        }
+      } else {
+        onAuthenticated(await loginAccount(form));
+      }
     } catch (caught) {
       setError(caught.message || "Das hat leider nicht geklappt.");
     } finally {
@@ -115,8 +128,8 @@ function LoginScreen({ onAuthenticated }) {
           <p className="muted">{mode === "login" ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast." : "Dein Fortschritt wird getrennt für dieses Konto gespeichert."}</p>
 
           <div className="auth-tabs" role="tablist">
-            <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); }} type="button">Anmelden</button>
-            <button className={mode === "register" ? "active" : ""} onClick={() => { setMode("register"); setError(""); }} type="button">Konto erstellen</button>
+            <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setNotice(""); }} type="button">Anmelden</button>
+            <button className={mode === "register" ? "active" : ""} onClick={() => { setMode("register"); setError(""); setNotice(""); }} type="button">Konto erstellen</button>
           </div>
 
           <form onSubmit={submit}>
@@ -132,10 +145,11 @@ function LoginScreen({ onAuthenticated }) {
               <input required minLength={8} type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="Mindestens 8 Zeichen" />
             </label>
             {error && <div className="form-error" role="alert">{error}</div>}
+            {notice && <div className="form-notice" role="status">{notice}</div>}
             <button className="primary-button full-button" disabled={busy} type="submit">{busy ? "Einen Moment …" : mode === "login" ? "Weiterlernen" : "Lernkonto erstellen"}<span>→</span></button>
           </form>
 
-          <div className="local-note"><span>i</span><p><strong>Testphase:</strong> Konto und Lernstand bleiben derzeit in diesem Browser. Die Server-Synchronisierung kann für den späteren Verkauf angeschlossen werden.</p></div>
+          <div className="local-note"><span>✓</span><p><strong>Sicher synchronisiert:</strong> Dein Lernstand wird in deinem persönlichen Konto gespeichert und steht dir auch auf anderen Geräten zur Verfügung.</p></div>
         </div>
       </section>
     </main>
@@ -403,7 +417,17 @@ export default function Home() {
   const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    setAccount(currentAccount());
+    let active = true;
+    currentAccount()
+      .then((nextAccount) => {
+        if (active) setAccount(nextAccount);
+      })
+      .catch((error) => {
+        if (active) setLoadError(error.message);
+      });
+    const unsubscribe = subscribeToAccount((nextAccount) => {
+      if (active) setAccount(nextAccount);
+    });
     fetch("/data/questions.json")
       .then((response) => {
         if (!response.ok) throw new Error("Fragen konnten nicht geladen werden.");
@@ -411,11 +435,25 @@ export default function Home() {
       })
       .then(setPayload)
       .catch((error) => setLoadError(error.message));
+    return () => {
+      active = false;
+      unsubscribe();
+    };
   }, []);
 
   useEffect(() => {
-    if (account) setLearning(loadLearningState(account.id));
-    else setLearning(null);
+    let active = true;
+    if (account) {
+      setLearning(null);
+      loadLearningState(account.id).then((nextLearning) => {
+        if (active) setLearning(nextLearning);
+      });
+    } else {
+      setLearning(null);
+    }
+    return () => {
+      active = false;
+    };
   }, [account]);
 
   function updateLearning(next) {
@@ -457,8 +495,8 @@ export default function Home() {
     setSession({ mode, title, questions: queue, spec, createdAt: Date.now() });
   }
 
-  function logout() {
-    logoutAccount();
+  async function logout() {
+    await logoutAccount();
     setAccount(null);
     setSession(null);
   }

@@ -11,13 +11,16 @@ Lern-App für den offiziellen Fragenkatalog der Fischerprüfung in Bayern 2026.
 - Prüfungssimulation mit 60 Fragen (12 je Fachgebiet)
 - responsive Oberfläche für Mobilgeräte und Desktop
 
-## Lokale Konten
+## Benutzerkonten und Lernstand
 
-Der aktuelle MVP speichert Konten und Lernstände getrennt im Browser. Passwörter
-werden mit PBKDF2 abgeleitet und nicht im Klartext gespeichert. Für Verkauf,
-geräteübergreifende Synchronisierung, Passwort-Zurücksetzen und Zahlungszugänge
-muss der Speicheradapter in `lib/local-account.js` durch einen serverseitigen
-Auth- und Datenbankdienst ersetzt werden.
+Anmeldung und Registrierung laufen über Supabase Auth. Lernstände, Merkliste und
+Streak werden in `public.learning_states` gespeichert und zusätzlich lokal
+zwischengespeichert. Row Level Security stellt sicher, dass angemeldete Nutzer
+nur ihren eigenen Datensatz lesen und verändern können.
+
+Für lokale Builds werden `NEXT_PUBLIC_SUPABASE_URL` und
+`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` benötigt. Die Vorlage liegt in
+`.env.example`; das Datenbankschema in `supabase/migrations/`.
 
 ## Fragenkatalog aktualisieren
 
