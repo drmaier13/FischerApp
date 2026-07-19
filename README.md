@@ -22,6 +22,12 @@ Für lokale Builds werden `NEXT_PUBLIC_SUPABASE_URL` und
 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` benötigt. Die Vorlage liegt in
 `.env.example`; das Datenbankschema in `supabase/migrations/`.
 
+## Statischer Upload in einen Unterordner
+
+Für den Betrieb unter `https://angelschule.bayern/app/` wird der Export mit
+`NEXT_PUBLIC_BASE_PATH=/app` und `STATIC_EXPORT=1` gebaut. Der erzeugte Inhalt
+aus `out/` kann anschließend in den Webserver-Ordner `app` übertragen werden.
+
 ## Fragenkatalog aktualisieren
 
 Der reproduzierbare Import liegt in `scripts/extract_questions.py`. Er liest

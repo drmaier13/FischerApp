@@ -1,6 +1,8 @@
 node_modules/
 .next/
 .open-next/
+out/
+ftp-preview/
 .wrangler/
 .dev.vars
 .env.local

@@ -11,6 +11,13 @@ import {
   subscribeToAccount,
 } from "@/lib/local-account";
 
+const APP_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
+function appPath(path) {
+  if (!path || /^https?:\/\//i.test(path)) return path;
+  return `${APP_BASE_PATH}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 const CORE_CATEGORIES = [
   "Fischkunde",
   "Gewässerkunde",
@@ -253,7 +260,7 @@ function Dashboard({ account, questions, learning, onStart, onLogout }) {
 }
 
 function QuizImage({ src, alt }) {
-  return <img className="question-image" src={src} alt={alt} />;
+  return <img className="question-image" src={appPath(src)} alt={alt} />;
 }
 
 function ExamSummary({ result, onDashboard, onRestart }) {
@@ -428,7 +435,7 @@ export default function Home() {
     const unsubscribe = subscribeToAccount((nextAccount) => {
       if (active) setAccount(nextAccount);
     });
-    fetch("/data/questions.json")
+    fetch(appPath("/data/questions.json"))
       .then((response) => {
         if (!response.ok) throw new Error("Fragen konnten nicht geladen werden.");
         return response.json();
