@@ -1,7 +1,14 @@
-import { copyFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, writeFile } from "node:fs/promises";
 
 await copyFile(".next/server/app/index.html", ".open-next/assets/index.html");
 await copyFile(".next/server/app/_not-found.html", ".open-next/assets/404.html");
+
+const staticRoutes = ["agb", "datenschutz", "impressum", "konto-loeschen", "widerruf"];
+
+for (const route of staticRoutes) {
+  await mkdir(`.open-next/assets/${route}`, { recursive: true });
+  await copyFile(`.next/server/app/${route}.html`, `.open-next/assets/${route}/index.html`);
+}
 
 const worker = `
 export default {
@@ -9,6 +16,11 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/") {
       url.pathname = "/index.html";
+    } else {
+      const route = url.pathname.replace(/^\\//, "").replace(/\\/$/, "");
+      if (${JSON.stringify(staticRoutes)}.includes(route)) {
+        url.pathname = \`/\${route}/index.html\`;
+      }
     }
 
     const response = await env.ASSETS.fetch(new Request(url, request));

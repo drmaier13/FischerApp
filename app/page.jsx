@@ -10,13 +10,7 @@ import {
   saveLearningState,
   subscribeToAccount,
 } from "@/lib/local-account";
-
-const APP_BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
-
-function appPath(path) {
-  if (!path || /^https?:\/\//i.test(path)) return path;
-  return `${APP_BASE_PATH}${path.startsWith("/") ? path : `/${path}`}`;
-}
+import { appPath } from "@/lib/app-path";
 
 const CORE_CATEGORIES = [
   "Fischkunde",
@@ -57,6 +51,22 @@ function BrandLockup({ light = false, small = false }) {
   );
 }
 
+const LEGAL_LINKS = [
+  ["Impressum", "/impressum/"],
+  ["Datenschutz", "/datenschutz/"],
+  ["AGB", "/agb/"],
+  ["Widerruf", "/widerruf/"],
+  ["Konto löschen", "/konto-loeschen/"],
+];
+
+function LegalLinks({ className = "" }) {
+  return (
+    <nav className={`app-legal-links ${className}`.trim()} aria-label="Rechtliche Informationen">
+      {LEGAL_LINKS.map(([label, href]) => <a key={href} href={appPath(href)}>{label}</a>)}
+    </nav>
+  );
+}
+
 function shuffle(items) {
   const result = [...items];
   for (let index = result.length - 1; index > 0; index -= 1) {
@@ -72,7 +82,7 @@ function todayKey(date = new Date()) {
 
 function LoginScreen({ onAuthenticated }) {
   const [mode, setMode] = useState("login");
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", acceptedTerms: false });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
@@ -151,12 +161,19 @@ function LoginScreen({ onAuthenticated }) {
             <label>Passwort
               <input required minLength={8} type="password" autoComplete={mode === "register" ? "new-password" : "current-password"} value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} placeholder="Mindestens 8 Zeichen" />
             </label>
+            {mode === "register" && (
+              <label className="legal-consent">
+                <input required type="checkbox" checked={form.acceptedTerms} onChange={(event) => setForm({ ...form, acceptedTerms: event.target.checked })} />
+                <span>Ich akzeptiere die <a href={appPath("/agb/")}>AGB</a> und habe die <a href={appPath("/datenschutz/")}>Datenschutzerklärung</a> zur Kenntnis genommen.</span>
+              </label>
+            )}
             {error && <div className="form-error" role="alert">{error}</div>}
             {notice && <div className="form-notice" role="status">{notice}</div>}
             <button className="primary-button full-button" disabled={busy} type="submit">{busy ? "Einen Moment …" : mode === "login" ? "Weiterlernen" : "Lernkonto erstellen"}<span>→</span></button>
           </form>
 
           <div className="local-note"><span>✓</span><p><strong>Sicher synchronisiert:</strong> Dein Lernstand wird in deinem persönlichen Konto gespeichert und steht dir auch auf anderen Geräten zur Verfügung.</p></div>
+          <LegalLinks className="login-legal" />
         </div>
       </section>
     </main>
@@ -252,7 +269,7 @@ function Dashboard({ account, questions, learning, onStart, onLogout }) {
           ))}
         </section>
 
-        <footer>Fragenkatalog 2026 · Lerninhalte und Erklärungen © Angelschule Bayern</footer>
+        <footer><p>Fragenkatalog 2026 · Lerninhalte und Erklärungen © Angelschule Bayern</p><LegalLinks /></footer>
       </main>
       <nav className="mobile-nav"><button className="active"><span>⌂</span>Start</button><button onClick={() => onStart({ type: "learn" })}><span>◉</span>Lernen</button><button onClick={() => onStart({ type: "exam" })}><span>✓</span>Prüfung</button><button onClick={() => onStart({ type: "favorites" })}><span>☆</span>Merken</button></nav>
     </div>
@@ -281,6 +298,7 @@ function ExamSummary({ result, onDashboard, onRestart }) {
           {categoryRows.map((row) => <div key={row.category}><span>{row.category}</span><strong className={row.correct >= 6 ? "good" : "bad"}>{row.correct} / {row.total}</strong></div>)}
         </div>
         <div className="summary-actions"><button className="secondary-button" onClick={onDashboard}>Zur Übersicht</button><button className="primary-button" onClick={onRestart}>Noch einmal</button></div>
+        <LegalLinks className="summary-legal" />
       </section>
     </main>
   );
@@ -412,6 +430,7 @@ function QuizScreen({ session, learning, onUpdateLearning, onDashboard, onRestar
         </button>
       </section>
       <p className="keyboard-tip">Tipp: Die Erklärung öffnest du über den kleinen <strong>i-Punkt</strong> neben der Frage.</p>
+      <LegalLinks className="quiz-legal" />
     </main>
   );
 }
