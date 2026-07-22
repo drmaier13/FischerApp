@@ -73,6 +73,8 @@ export default function AnleitungPage() {
           <div><strong>6</strong><span>richtige Antworten je Fachgebiet</span></div>
         </div>
         <p>Nur wenn beide Bedingungen erfüllt sind, wird die Simulation als bestanden bewertet. Auch die Antworten aus der Simulation fließen in deinen persönlichen Lernstand ein.</p>
+        <p>Jede vollständig abgeschlossene Simulation wird mit Datum, Bearbeitungsdauer, Gesamtpunktzahl und den Ergebnissen der fünf Fachgebiete in deinem Lernkonto gespeichert. Die Übersicht zeigt daraus Anzahl, Bestwert, Durchschnitt und die letzten Ergebnisse.</p>
+        <aside className="guide-note"><strong>Hinweis zur Prüfungsreife:</strong> Die App bewertet dich als prüfungsreif, wenn du die letzten drei Simulationen bestanden hast und kein Fachgebiet in mindestens zwei dieser Simulationen unter 8 von 12 Punkten lag. Diese Einschätzung ist eine Lernempfehlung und keine Bestehensgarantie.</aside>
       </section>
 
       <section>
@@ -82,6 +84,8 @@ export default function AnleitungPage() {
           <div><dt>Sicher gelernt</dt><dd>Anzahl der Fragen, die mindestens Lernstufe vier erreicht haben.</dd></div>
           <div><dt>Fehler wiederholen</dt><dd>Fragen, die du bisher mindestens einmal falsch beantwortet hast.</dd></div>
           <div><dt>Lernserie</dt><dd>Anzahl aufeinanderfolgender Tage, an denen du mindestens eine Frage beantwortet hast.</dd></div>
+          <div><dt>Prüfungshistorie</dt><dd>Anzahl, Durchschnitt, Bestwert und Verlauf deiner abgeschlossenen Simulationen.</dd></div>
+          <div><dt>Prüfungsreife</dt><dd>Eine Empfehlung aus den letzten drei Simulationen und deren Fachgebietswerten.</dd></div>
         </dl>
       </section>
 

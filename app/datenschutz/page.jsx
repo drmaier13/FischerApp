@@ -29,7 +29,8 @@ export default function DatenschutzPage() {
 
       <section>
         <h2>4. Persönlicher Lernstand</h2>
-        <p>Wir speichern zum Lernkonto insbesondere bearbeitete Fragen, Antwortversuche, richtige Antworten, Lernfortschritt, zuletzt bearbeitete Zeitpunkte, Merkliste und Lernserie. Diese Daten dienen ausschließlich dazu, den persönlichen Lernstand zu speichern, passende Wiederholungen anzubieten und den Fortschritt geräteübergreifend zu synchronisieren. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.</p>
+        <p>Wir speichern zum Lernkonto insbesondere bearbeitete Fragen, Antwortversuche, richtige Antworten, Lernfortschritt, zuletzt bearbeitete Zeitpunkte, Merkliste und Lernserie. Bei Prüfungssimulationen speichern wir zusätzlich Abschlusszeitpunkt, Bearbeitungsdauer, Gesamtpunktzahl, Bestehensstatus und die Punktzahlen der einzelnen Fachgebiete.</p>
+        <p>Diese Daten dienen ausschließlich dazu, den persönlichen Lernstand und die Prüfungshistorie zu speichern, passende Wiederholungen anzubieten, Hinweise zur Prüfungsreife abzuleiten und den Fortschritt geräteübergreifend zu synchronisieren. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.</p>
       </section>
 
       <section>

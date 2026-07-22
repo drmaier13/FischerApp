@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   currentAccount,
+  loadExamHistory,
   loadLearningState,
   loginAccount,
   logoutAccount,
   registerAccount,
   saveLearningState,
+  saveExamAttempt,
   subscribeToAccount,
 } from "@/lib/local-account";
 import { appPath } from "@/lib/app-path";
@@ -87,6 +89,73 @@ function formatAccessDate(value) {
     month: "2-digit",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function formatExamDate(value) {
+  return new Intl.DateTimeFormat("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+  }).format(new Date(value));
+}
+
+function formatDuration(seconds) {
+  const minutes = Math.max(1, Math.round((seconds || 0) / 60));
+  return `${minutes} Min.`;
+}
+
+function examDetails(answers) {
+  const totalCorrect = answers.filter((item) => item.correct).length;
+  const categoryRows = CORE_CATEGORIES.map((category) => {
+    const categoryAnswers = answers.filter((item) => item.category === category);
+    return {
+      category,
+      correct: categoryAnswers.filter((item) => item.correct).length,
+      total: categoryAnswers.length,
+    };
+  });
+  return {
+    totalCorrect,
+    categoryRows,
+    passed: totalCorrect >= 45 && categoryRows.every((row) => row.correct >= 6),
+    categoryScores: Object.fromEntries(categoryRows.map((row) => [row.category, { correct: row.correct, total: row.total }])),
+  };
+}
+
+function examReadiness(history) {
+  const total = history.length;
+  const passedCount = history.filter((attempt) => attempt.passed).length;
+  const average = total ? Math.round(history.reduce((sum, attempt) => sum + attempt.totalCorrect, 0) / total) : 0;
+  const best = total ? Math.max(...history.map((attempt) => attempt.totalCorrect)) : 0;
+  const recent = history.slice(0, 3);
+  const repeatedWeakCategories = recent.length === 3
+    ? CORE_CATEGORIES.filter((category) => recent.filter((attempt) => (attempt.categoryScores[category]?.correct || 0) < 8).length >= 2)
+    : [];
+  const ready = recent.length === 3 && recent.every((attempt) => attempt.passed) && repeatedWeakCategories.length === 0;
+
+  let title = "Noch keine Einschätzung";
+  let description = "Absolviere deine erste Prüfungssimulation. Nach drei Simulationen wird die Einschätzung besonders aussagekräftig.";
+  let tone = "neutral";
+
+  if (ready) {
+    title = "Prüfungsreif";
+    description = "Du hast die letzten drei Simulationen bestanden und kein Fachgebiet war wiederholt auffällig schwach.";
+    tone = "ready";
+  } else if (recent.length < 3 && total > 0) {
+    title = "Einschätzung wird aufgebaut";
+    description = `Noch ${3 - recent.length} ${3 - recent.length === 1 ? "Simulation" : "Simulationen"}, dann kann die App deine jüngste Entwicklung zuverlässiger bewerten.`;
+    tone = "building";
+  } else if (recent.length === 3 && !recent.every((attempt) => attempt.passed)) {
+    title = "Noch nicht stabil prüfungsreif";
+    description = "Mindestens eine der letzten drei Simulationen wurde nicht bestanden. Wiederhole gezielt deine schwächsten Themen.";
+    tone = "practice";
+  } else if (repeatedWeakCategories.length) {
+    title = "Fast prüfungsreif";
+    description = `Diese Fachgebiete lagen in mindestens zwei der letzten drei Simulationen unter 8 von 12 Punkten: ${repeatedWeakCategories.join(", ")}.`;
+    tone = "building";
+  }
+
+  return { total, passedCount, average, best, recent, repeatedWeakCategories, ready, title, description, tone };
 }
 
 function LoginScreen({ onAuthenticated }) {
@@ -217,7 +286,67 @@ function ProgressRing({ value }) {
   );
 }
 
-function Dashboard({ account, questions, learning, onStart, onLogout }) {
+function ExamReadinessPanel({ history, onStartExam }) {
+  const readiness = examReadiness(history);
+  const recentForCategories = history.slice(0, 3);
+  const categoryAverages = CORE_CATEGORIES.map((category) => ({
+    category,
+    average: recentForCategories.length
+      ? Math.round((recentForCategories.reduce((sum, attempt) => sum + (attempt.categoryScores[category]?.correct || 0), 0) / recentForCategories.length) * 10) / 10
+      : 0,
+  }));
+
+  return (
+    <section className={`exam-readiness exam-readiness--${readiness.tone}`}>
+      <div className="exam-readiness-head">
+        <div>
+          <span className="eyebrow">Prüfungshistorie</span>
+          <h2>{readiness.title}</h2>
+          <p>{readiness.description}</p>
+        </div>
+        <button className="primary-button" onClick={onStartExam}>Prüfung starten <span>→</span></button>
+      </div>
+
+      <div className="exam-stat-grid">
+        <article><small>Simulationen</small><strong>{readiness.total}</strong><span>insgesamt</span></article>
+        <article><small>Bestanden</small><strong>{readiness.passedCount}</strong><span>von {readiness.total || 0}</span></article>
+        <article><small>Durchschnitt</small><strong>{readiness.average}<em>/60</em></strong><span>alle Simulationen</span></article>
+        <article><small>Bestwert</small><strong>{readiness.best}<em>/60</em></strong><span>persönlicher Rekord</span></article>
+      </div>
+
+      {history.length > 0 ? (
+        <div className="exam-readiness-details">
+          <div className="exam-history-list">
+            <h3>Letzte Ergebnisse</h3>
+            {history.slice(0, 5).map((attempt) => (
+              <article key={attempt.id}>
+                <span className={`exam-result-mark ${attempt.passed ? "passed" : "failed"}`}>{attempt.passed ? "✓" : "!"}</span>
+                <div><strong>{attempt.totalCorrect} von 60</strong><small>{formatExamDate(attempt.completedAt)} · {formatDuration(attempt.durationSeconds)}</small></div>
+                <b>{attempt.passed ? "Bestanden" : "Nicht bestanden"}</b>
+              </article>
+            ))}
+          </div>
+          <div className="exam-category-trend">
+            <h3>Fachgebiete · letzte {recentForCategories.length}</h3>
+            {categoryAverages.map((item) => (
+              <div key={item.category}>
+                <span>{item.category}</span>
+                <div className="bar"><i style={{ width: `${Math.min(100, (item.average / 12) * 100)}%` }} /></div>
+                <strong>{item.average.toLocaleString("de-DE")}/12</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="exam-empty-history">Deine abgeschlossenen Simulationen erscheinen hier automatisch mit Datum, Punkten und Fachgebietsauswertung.</div>
+      )}
+
+      <p className="exam-readiness-note">Die Einschätzung „prüfungsreif“ ist eine Lernempfehlung der App und keine Garantie für das Bestehen der staatlichen Prüfung.</p>
+    </section>
+  );
+}
+
+function Dashboard({ account, questions, learning, examHistory, onStart, onLogout }) {
   const progressEntries = Object.values(learning.progress);
   const attempts = progressEntries.reduce((sum, item) => sum + item.attempts, 0);
   const correct = progressEntries.reduce((sum, item) => sum + item.correct, 0);
@@ -280,6 +409,8 @@ function Dashboard({ account, questions, learning, onStart, onLogout }) {
           <article><span className="metric-icon amber">↻</span><div><small>Fehler wiederholen</small><strong>{weakCount}</strong></div><button onClick={() => onStart({ type: "mistakes" })}>Starten</button></article>
         </section>
 
+        <ExamReadinessPanel history={examHistory} onStartExam={() => onStart({ type: "exam" })} />
+
         <div className="section-heading"><div><span className="eyebrow">Lernwege</span><h2>Was möchtest du üben?</h2></div></div>
         <section className="quick-grid">
           <button className="quick-card quick-card--primary" onClick={() => onStart({ type: "exam" })}><span className="quick-icon">✓</span><div><strong>Prüfung simulieren</strong><small>60 Fragen wie in der echten Prüfung</small></div><b>→</b></button>
@@ -310,12 +441,7 @@ function QuizImage({ src, alt }) {
 }
 
 function ExamSummary({ result, onDashboard, onRestart }) {
-  const totalCorrect = result.answers.filter((item) => item.correct).length;
-  const categoryRows = CORE_CATEGORIES.map((category) => {
-    const answers = result.answers.filter((item) => item.category === category);
-    return { category, correct: answers.filter((item) => item.correct).length, total: answers.length };
-  });
-  const passed = totalCorrect >= 45 && categoryRows.every((row) => row.correct >= 6);
+  const { totalCorrect, categoryRows, passed } = examDetails(result.answers);
   return (
     <main className="summary-shell">
       <section className="summary-card">
@@ -333,13 +459,14 @@ function ExamSummary({ result, onDashboard, onRestart }) {
   );
 }
 
-function QuizScreen({ session, learning, onUpdateLearning, onDashboard, onRestart }) {
+function QuizScreen({ session, learning, onUpdateLearning, onDashboard, onRestart, onSaveExam }) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [checked, setChecked] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [examAnswers, setExamAnswers] = useState([]);
   const [examResult, setExamResult] = useState(null);
+  const examSaved = useRef(false);
   const question = session.questions[index];
   const isExam = session.mode === "exam";
 
@@ -388,8 +515,18 @@ function QuizScreen({ session, learning, onUpdateLearning, onDashboard, onRestar
       const nextAnswers = [...examAnswers, { id: question.id, category: question.category, selected, correct }];
       setExamAnswers(nextAnswers);
       recordAnswer(correct);
-      if (index === session.questions.length - 1) setExamResult({ answers: nextAnswers });
-      else nextQuestion();
+      if (index === session.questions.length - 1) {
+        const completedResult = {
+          answers: nextAnswers,
+          completedAt: new Date().toISOString(),
+          durationSeconds: Math.max(1, Math.round((Date.now() - session.createdAt) / 1000)),
+        };
+        setExamResult(completedResult);
+        if (!examSaved.current) {
+          examSaved.current = true;
+          void onSaveExam(completedResult).catch((error) => console.error(error.message));
+        }
+      } else nextQuestion();
       return;
     }
     if (!checked) {
@@ -468,6 +605,7 @@ export default function Home() {
   const [account, setAccount] = useState(null);
   const [payload, setPayload] = useState(null);
   const [learning, setLearning] = useState(null);
+  const [examHistory, setExamHistory] = useState(null);
   const [session, setSession] = useState(null);
   const [loadError, setLoadError] = useState("");
 
@@ -500,11 +638,20 @@ export default function Home() {
     let active = true;
     if (account && !account.accessExpired) {
       setLearning(null);
-      loadLearningState(account.id).then((nextLearning) => {
-        if (active) setLearning(nextLearning);
-      });
+      setExamHistory(null);
+      Promise.all([loadLearningState(account.id), loadExamHistory(account.id)])
+        .then(([nextLearning, nextExamHistory]) => {
+          if (active) {
+            setLearning(nextLearning);
+            setExamHistory(nextExamHistory);
+          }
+        })
+        .catch((error) => {
+          if (active) setLoadError(error.message);
+        });
     } else {
       setLearning(null);
+      setExamHistory(null);
     }
     return () => {
       active = false;
@@ -514,6 +661,20 @@ export default function Home() {
   function updateLearning(next) {
     setLearning(next);
     saveLearningState(account.id, next);
+  }
+
+  async function recordExam(result) {
+    const details = examDetails(result.answers);
+    const savedAttempt = await saveExamAttempt(account.id, {
+      completedAt: result.completedAt,
+      durationSeconds: result.durationSeconds,
+      totalCorrect: details.totalCorrect,
+      totalQuestions: result.answers.length,
+      passed: details.passed,
+      categoryScores: details.categoryScores,
+    });
+    setExamHistory((current) => [savedAttempt, ...(current || [])]);
+    return savedAttempt;
   }
 
   function buildSession(spec) {
@@ -554,13 +715,14 @@ export default function Home() {
     await logoutAccount();
     setAccount(null);
     setSession(null);
+    setExamHistory(null);
   }
 
-  if (loadError) return <main className="empty-shell"><div><h1>Die Fragen konnten nicht geladen werden.</h1><p>{loadError}</p></div></main>;
+  if (loadError) return <main className="empty-shell"><div><h1>Die App konnte nicht vollständig geladen werden.</h1><p>{loadError}</p></div></main>;
   if (!payload) return <main className="loading-shell"><FishMark /><span>Fragenkatalog wird vorbereitet …</span></main>;
   if (!account) return <LoginScreen onAuthenticated={setAccount} />;
   if (account.accessExpired) return <AccessExpiredScreen account={account} onLogout={logout} />;
-  if (!learning) return <main className="loading-shell"><FishMark /><span>Lernstand wird geladen …</span></main>;
-  if (session) return <QuizScreen key={session.createdAt} session={session} learning={learning} onUpdateLearning={updateLearning} onDashboard={() => setSession(null)} onRestart={() => buildSession(session.spec)} />;
-  return <Dashboard account={account} questions={payload.questions} learning={learning} onStart={buildSession} onLogout={logout} />;
+  if (!learning || !examHistory) return <main className="loading-shell"><FishMark /><span>Lernstand wird geladen …</span></main>;
+  if (session) return <QuizScreen key={session.createdAt} session={session} learning={learning} onUpdateLearning={updateLearning} onDashboard={() => setSession(null)} onRestart={() => buildSession(session.spec)} onSaveExam={recordExam} />;
+  return <Dashboard account={account} questions={payload.questions} learning={learning} examHistory={examHistory} onStart={buildSession} onLogout={logout} />;
 }
