@@ -52,6 +52,7 @@ function BrandLockup({ light = false, small = false }) {
 }
 
 const LEGAL_LINKS = [
+  ["Anleitung", "/anleitung/"],
   ["Impressum", "/impressum/"],
   ["Datenschutz", "/datenschutz/"],
   ["AGB", "/agb/"],
@@ -61,7 +62,7 @@ const LEGAL_LINKS = [
 
 function LegalLinks({ className = "" }) {
   return (
-    <nav className={`app-legal-links ${className}`.trim()} aria-label="Rechtliche Informationen">
+    <nav className={`app-legal-links ${className}`.trim()} aria-label="Hilfe und rechtliche Informationen">
       {LEGAL_LINKS.map(([label, href]) => <a key={href} href={appPath(href)}>{label}</a>)}
     </nav>
   );
@@ -247,6 +248,7 @@ function Dashboard({ account, questions, learning, onStart, onLogout }) {
           <button className="nav-item" onClick={() => onStart({ type: "learn" })}><span>◉</span>Lernen</button>
           <button className="nav-item" onClick={() => onStart({ type: "exam" })}><span>✓</span>Prüfung</button>
           <button className="nav-item" onClick={() => onStart({ type: "favorites" })}><span>☆</span>Merkliste</button>
+          <a className="nav-item" href={appPath("/anleitung/")}><span>?</span>Anleitung</a>
         </nav>
         <div className="sidebar-tip">
           <span>Schon gewusst?</span>

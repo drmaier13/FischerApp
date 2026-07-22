@@ -3,7 +3,7 @@ import { copyFile, mkdir, writeFile } from "node:fs/promises";
 await copyFile(".next/server/app/index.html", ".open-next/assets/index.html");
 await copyFile(".next/server/app/_not-found.html", ".open-next/assets/404.html");
 
-const staticRoutes = ["agb", "datenschutz", "impressum", "konto-loeschen", "widerruf"];
+const staticRoutes = ["agb", "anleitung", "datenschutz", "impressum", "konto-loeschen", "widerruf"];
 
 for (const route of staticRoutes) {
   await mkdir(`.open-next/assets/${route}`, { recursive: true });

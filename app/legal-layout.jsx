@@ -1,6 +1,7 @@
 import { appPath } from "@/lib/app-path";
 
 const LEGAL_LINKS = [
+  ["Anleitung", "/anleitung/"],
   ["Impressum", "/impressum/"],
   ["Datenschutz", "/datenschutz/"],
   ["AGB", "/agb/"],
@@ -27,7 +28,7 @@ export function LegalPage({ eyebrow = "Rechtliches", title, intro, updated = "22
         <div className="legal-content">{children}</div>
       </article>
 
-      <nav className="legal-nav" aria-label="Rechtliche Informationen">
+      <nav className="legal-nav" aria-label="Hilfe und rechtliche Informationen">
         {LEGAL_LINKS.map(([label, href]) => <a key={href} href={appPath(href)}>{label}</a>)}
       </nav>
     </main>
