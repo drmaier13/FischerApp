@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>E-Mail-Adresse bestätigen</title>
+  </head>
+  <body style="margin:0;padding:0;background:#f3f6f5;color:#18343a;font-family:Arial,Helvetica,sans-serif;">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+      Bestätige deine E-Mail-Adresse und aktiviere dein Lernkonto für die Fischerprüfung Bayern 2026.
+    </div>
+
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f6f5;">
+      <tr>
+        <td align="center" style="padding:28px 14px;">
+          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:620px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(18,62,71,0.12);">
+            <tr>
+              <td style="background:#123e47;padding:26px 32px;border-bottom:5px solid #ee785f;">
+                <div style="font-size:24px;line-height:1.2;font-weight:700;color:#ffffff;">Angelschule Bayern</div>
+                <div style="margin-top:5px;font-size:13px;letter-spacing:1.6px;color:#d7e7e5;">PRÜFUNGSAPP</div>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:34px 32px 18px;">
+                <h1 style="margin:0 0 18px;font-size:26px;line-height:1.25;color:#123e47;">Dein Lernkonto ist fast bereit</h1>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.65;">Hallo,</p>
+                <p style="margin:0 0 16px;font-size:16px;line-height:1.65;">
+                  du hast gerade ein Lernkonto für die <strong>Angelschule Bayern – PrüfungsApp</strong> angelegt. Die App unterstützt dich bei der Vorbereitung auf die Fischerprüfung in Bayern 2026.
+                </p>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;background:#eef6f4;border-left:4px solid #ee785f;border-radius:8px;">
+                  <tr>
+                    <td style="padding:18px 20px;font-size:15px;line-height:1.55;color:#18343a;">
+                      <strong>Was bestätigst du?</strong><br>
+                      Mit dem Klick bestätigst du, dass <strong>{{ .Email }}</strong> deine E-Mail-Adresse ist. Danach kannst du dich anmelden und dein persönlicher Lernstand wird deinem Konto zugeordnet.
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:26px 0;">
+                  <tr>
+                    <td bgcolor="#ee785f" style="border-radius:8px;">
+                      <a href="{{ .ConfirmationURL }}" style="display:inline-block;padding:15px 24px;color:#ffffff;text-decoration:none;font-size:16px;font-weight:700;">E-Mail-Adresse bestätigen</a>
+                    </td>
+                  </tr>
+                </table>
+
+                <p style="margin:0 0 8px;font-size:13px;line-height:1.55;color:#5b7075;">Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:</p>
+                <p style="margin:0 0 22px;font-size:13px;line-height:1.55;word-break:break-all;"><a href="{{ .ConfirmationURL }}" style="color:#176f78;">{{ .ConfirmationURL }}</a></p>
+
+                <p style="margin:0;padding:16px 18px;background:#fff8f5;border-radius:8px;font-size:14px;line-height:1.55;color:#5b4b46;">
+                  <strong>Du hast kein Konto angelegt?</strong><br>
+                  Dann ignoriere diese E-Mail. Es wird nichts aktiviert. Wir fragen dein Passwort niemals per E-Mail ab.
+                </p>
+              </td>
+            </tr>
+            <tr>
+              <td style="padding:20px 32px 30px;">
+                <p style="margin:0 0 14px;font-size:15px;line-height:1.6;">Viel Erfolg beim Lernen!<br><strong>Deine Angelschule Bayern</strong></p>
+                <p style="margin:0;font-size:13px;line-height:1.7;color:#687b7f;">
+                  <a href="https://angelschule.bayern/app/" style="color:#176f78;">Zur PrüfungsApp</a>
+                  &nbsp;·&nbsp;
+                  <a href="https://angelschule.bayern/app/impressum/" style="color:#176f78;">Impressum</a>
+                  &nbsp;·&nbsp;
+                  <a href="https://angelschule.bayern/app/datenschutz/" style="color:#176f78;">Datenschutz</a>
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -80,6 +80,14 @@ function todayKey(date = new Date()) {
   return date.toISOString().slice(0, 10);
 }
 
+function formatAccessDate(value) {
+  return new Intl.DateTimeFormat("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
 function LoginScreen({ onAuthenticated }) {
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState({ name: "", email: "", password: "", acceptedTerms: false });
@@ -100,7 +108,7 @@ function LoginScreen({ onAuthenticated }) {
       if (mode === "register") {
         const result = await registerAccount(form);
         if (result.requiresConfirmation) {
-          setNotice("Dein Konto wurde angelegt. Bitte bestätige jetzt den Link in der E-Mail und melde dich anschließend an.");
+          setNotice("Dein Konto wurde angelegt. Bitte bestätige jetzt den Link in der E-Mail. Ab der Bestätigung ist dein Zugang zwölf Monate freigeschaltet.");
           setMode("login");
           setForm((current) => ({ ...current, password: "" }));
         } else {
@@ -142,7 +150,7 @@ function LoginScreen({ onAuthenticated }) {
         <div className="login-card">
           <span className="eyebrow">Dein Lernkonto</span>
           <h2>{mode === "login" ? "Willkommen zurück" : "Jetzt Lernkonto anlegen"}</h2>
-          <p className="muted">{mode === "login" ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast." : "Dein Fortschritt wird getrennt für dieses Konto gespeichert."}</p>
+          <p className="muted">{mode === "login" ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast." : "Dein Lernkonto ist ab der E-Mail-Bestätigung zwölf Monate freigeschaltet."}</p>
 
           <div className="auth-tabs" role="tablist">
             <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setNotice(""); }} type="button">Anmelden</button>
@@ -176,6 +184,25 @@ function LoginScreen({ onAuthenticated }) {
           <LegalLinks className="login-legal" />
         </div>
       </section>
+    </main>
+  );
+}
+
+function AccessExpiredScreen({ account, onLogout }) {
+  return (
+    <main className="empty-shell access-expired-shell">
+      <div>
+        <FishMark />
+        <span className="eyebrow">Zugangszeitraum beendet</span>
+        <h1>Dein Jahreszugang ist abgelaufen.</h1>
+        <p>Dein Lernstand bleibt gespeichert. Für eine Verlängerung wende dich bitte an die Angelschule Bayern.</p>
+        <p className="access-expired-date">Freigeschaltet bis <strong>{formatAccessDate(account.accessExpiresAt)}</strong></p>
+        <div className="access-expired-actions">
+          <a className="primary-button" href="mailto:app@angelschule.bayern?subject=Pr%C3%BCfungsApp%20%E2%80%93%20Zugang%20verl%C3%A4ngern">Zugang verlängern</a>
+          <button className="secondary-button" type="button" onClick={onLogout}>Abmelden</button>
+        </div>
+        <LegalLinks />
+      </div>
     </main>
   );
 }
@@ -225,7 +252,7 @@ function Dashboard({ account, questions, learning, onStart, onLogout }) {
           <span>Schon gewusst?</span>
           <p>Kurze, regelmäßige Einheiten festigen Wissen besser als ein langer Lernmarathon.</p>
         </div>
-        <button className="account-button" onClick={onLogout}><span>{account.name.slice(0, 1).toUpperCase()}</span><div><strong>{account.name}</strong><small>Testzugang</small></div><b>↗</b></button>
+        <button className="account-button" onClick={onLogout}><span>{account.name.slice(0, 1).toUpperCase()}</span><div><strong>{account.name}</strong><small>Freigeschaltet bis {formatAccessDate(account.accessExpiresAt)}</small></div><b>↗</b></button>
       </aside>
 
       <main className="dashboard">
@@ -469,7 +496,7 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-    if (account) {
+    if (account && !account.accessExpired) {
       setLearning(null);
       loadLearningState(account.id).then((nextLearning) => {
         if (active) setLearning(nextLearning);
@@ -530,6 +557,7 @@ export default function Home() {
   if (loadError) return <main className="empty-shell"><div><h1>Die Fragen konnten nicht geladen werden.</h1><p>{loadError}</p></div></main>;
   if (!payload) return <main className="loading-shell"><FishMark /><span>Fragenkatalog wird vorbereitet …</span></main>;
   if (!account) return <LoginScreen onAuthenticated={setAccount} />;
+  if (account.accessExpired) return <AccessExpiredScreen account={account} onLogout={logout} />;
   if (!learning) return <main className="loading-shell"><FishMark /><span>Lernstand wird geladen …</span></main>;
   if (session) return <QuizScreen key={session.createdAt} session={session} learning={learning} onUpdateLearning={updateLearning} onDashboard={() => setSession(null)} onRestart={() => buildSession(session.spec)} />;
   return <Dashboard account={account} questions={payload.questions} learning={learning} onStart={buildSession} onLogout={logout} />;

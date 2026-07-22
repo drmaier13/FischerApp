@@ -258,6 +258,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(238, 120, 95
 .empty-shell > div { max-width: 540px; text-align: center; }
 .empty-shell h1 { font-family: Georgia, serif; font-size: 35px; font-weight: 500; }
 .empty-shell p { margin-bottom: 22px; color: var(--muted); line-height: 1.6; }
+.access-expired-shell .fish-mark { margin: 0 auto 18px; }
+.access-expired-shell .eyebrow { display: block; margin-bottom: 12px; }
+.access-expired-shell .access-expired-date { margin: -4px 0 24px; color: var(--navy); }
+.access-expired-actions { display: flex; justify-content: center; gap: 12px; margin-bottom: 28px; }
+.access-expired-actions a { text-decoration: none; }
+.access-expired-actions .secondary-button { min-height: 52px; padding: 0 24px; border: 1px solid #d2ddda; background: white; color: var(--navy); }
 .loading-shell { color: var(--navy); }
 .loading-shell .fish-mark { animation: swim 1.4s ease-in-out infinite; }
 .loading-shell span { margin-top: -44vh; color: var(--muted); font-size: 13px; }

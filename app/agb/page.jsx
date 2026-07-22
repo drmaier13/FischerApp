@@ -25,7 +25,7 @@ export default function AgbPage() {
       <section>
         <h2>4. Vertragsschluss und kostenpflichtige Angebote</h2>
         <p>Die Registrierung für einen ausdrücklich als kostenlos bezeichneten Zugang ist unentgeltlich. Ein kostenpflichtiger Vertrag kommt erst zustande, wenn ein Nutzer ein entsprechend gekennzeichnetes Angebot verbindlich bestellt und die Bestellung bestätigt wurde.</p>
-        <p>Preis, Leistungsumfang, Zugangszeitraum, eine mögliche automatische Verlängerung und Kündigungsbedingungen werden vor Abschluss der Bestellung klar angezeigt. Bei Käufen über den Apple App Store oder Google Play gelten ergänzend die dort angezeigten Bestell- und Zahlungsbedingungen.</p>
+        <p>Ein freigeschalteter Zugang gilt für zwölf Monate. Der Zeitraum beginnt mit der Freischaltung des Lernkontos, bei der Registrierung derzeit mit der Bestätigung der E-Mail-Adresse. Preis und Leistungsumfang werden vor Abschluss einer kostenpflichtigen Bestellung klar angezeigt. Bei Käufen über den Apple App Store oder Google Play gelten ergänzend die dort angezeigten Bestell- und Zahlungsbedingungen.</p>
       </section>
 
       <section>
@@ -35,7 +35,7 @@ export default function AgbPage() {
 
       <section>
         <h2>6. Bereitstellung, technische Voraussetzungen und Aktualisierungen</h2>
-        <p>Der Zugang wird nach Vertragsschluss beziehungsweise erfolgreicher Zahlungsbestätigung bereitgestellt. Voraussetzung sind eine geeignete Internetverbindung, ein aktueller Browser oder eine unterstützte App-Version und ein kompatibles Endgerät.</p>
+        <p>Der Zugang wird nach Vertragsschluss beziehungsweise erfolgreicher Zahlungsbestätigung und Freischaltung bereitgestellt. Das in der App angezeigte Ablaufdatum kennzeichnet das Ende des zwölfmonatigen Zugangszeitraums. Voraussetzung sind eine geeignete Internetverbindung, ein aktueller Browser oder eine unterstützte App-Version und ein kompatibles Endgerät.</p>
         <p>Wir dürfen die App weiterentwickeln und aus sachlichen Gründen ändern, insbesondere zur Fehlerbehebung, Sicherheit, Rechtskonformität und Anpassung an den offiziellen Fragenkatalog. Gesetzliche Rechte bei Änderungen digitaler Produkte bleiben unberührt. Erforderliche Aktualisierungen und Sicherheitsaktualisierungen werden im gesetzlichen Umfang bereitgestellt.</p>
       </section>
 
@@ -51,7 +51,7 @@ export default function AgbPage() {
 
       <section>
         <h2>9. Laufzeit, Kündigung und Kontolöschung</h2>
-        <p>Kostenlose Zugänge können jederzeit beendet werden. Für kostenpflichtige Zugänge gelten die vor der Bestellung angegebenen Laufzeiten und Kündigungsbedingungen. Über einen App-Store abgeschlossene Abonnements werden in der Kontoverwaltung des jeweiligen Stores gekündigt.</p>
+        <p>Der Zugang endet nach zwölf Monaten automatisch, ohne dass es einer Kündigung bedarf. Er verlängert sich nicht automatisch. Eine weitere Nutzung setzt eine erneute Freischaltung oder Verlängerung voraus. Abweichende Bedingungen für einen Kauf über einen App-Store werden vor der Bestellung ausdrücklich angezeigt.</p>
         <p>Unabhängig von der Vertragsbeendigung kann die Löschung des Lernkontos angefordert werden. Gesetzliche Aufbewahrungspflichten bleiben unberührt.</p>
       </section>
 

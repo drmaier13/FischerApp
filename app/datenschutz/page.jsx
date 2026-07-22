@@ -23,7 +23,7 @@ export default function DatenschutzPage() {
 
       <section>
         <h2>3. Lernkonto und Anmeldung</h2>
-        <p>Bei der Registrierung verarbeiten wir deinen Vornamen, deine E-Mail-Adresse, eine technische Benutzer-ID, den Zeitpunkt der Registrierung, die bestätigte Fassung der Nutzungsbedingungen und die für Anmeldung und E-Mail-Bestätigung erforderlichen Daten. Das Passwort wird durch unseren Authentifizierungsdienst verarbeitet und nicht im Klartext gespeichert.</p>
+        <p>Bei der Registrierung verarbeiten wir deinen Vornamen, deine E-Mail-Adresse, eine technische Benutzer-ID, den Zeitpunkt der Registrierung und E-Mail-Bestätigung, Beginn und Ende des Zugangszeitraums, die bestätigte Fassung der Nutzungsbedingungen und die für Anmeldung und E-Mail-Bestätigung erforderlichen Daten. Das Passwort wird durch unseren Authentifizierungsdienst verarbeitet und nicht im Klartext gespeichert.</p>
         <p>Die Daten werden zur Einrichtung und Verwaltung des Lernkontos, zur Anmeldung und zur Wiederherstellung des Zugangs verarbeitet. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Soweit Sicherheitsprotokolle zur Abwehr unberechtigter Zugriffe erforderlich sind, beruht die Verarbeitung zusätzlich auf Art. 6 Abs. 1 lit. f DSGVO.</p>
       </section>
 
