@@ -46,29 +46,36 @@ export default function DatenschutzPage() {
       </section>
 
       <section>
-        <h2>7. Kontaktaufnahme</h2>
+        <h2>7. Zahlungen und Zugangsverwaltung</h2>
+        <p>Bei einem Kauf verarbeiten wir insbesondere Benutzer-ID, E-Mail-Adresse, bestellten Zugangszeitraum, Zahlungsstatus, Betrag, Währung, Zahlungs- und Bestellreferenzen sowie den Zeitpunkt der Freischaltung. Die für die Zahlungsabwicklung erforderlichen Zahlungsdaten werden durch Stripe verarbeitet. Wir erhalten grundsätzlich keine vollständigen Karten- oder Kontodaten.</p>
+        <p>Bei kostenlosen Freischaltungen und Aktionscodes speichern wir zusätzlich die Zugangsart, Laufzeit, Code- oder Aktionsreferenz, Anzahl und Zeitpunkt der Einlösungen sowie gegebenenfalls einen internen Freigabegrund. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO; bei freiwilligen Kulanz- oder Partnerfreigaben zusätzlich Art. 6 Abs. 1 lit. f DSGVO.</p>
+        <p>Zahlungsdienstleister ist Stripe Payments Europe, Limited. Weitere Informationen: <a href="https://stripe.com/de/privacy">Datenschutz bei Stripe</a>.</p>
+      </section>
+
+      <section>
+        <h2>8. Kontaktaufnahme</h2>
         <p>Wenn du uns per E-Mail oder Telefon kontaktierst, verarbeiten wir deine Kontaktdaten und den Inhalt der Anfrage, um sie zu beantworten. Rechtsgrundlage ist je nach Anliegen Art. 6 Abs. 1 lit. b oder lit. f DSGVO. Geschäftliche Kommunikation kann aufgrund gesetzlicher Aufbewahrungspflichten länger gespeichert werden.</p>
       </section>
 
       <section>
-        <h2>8. Speicherdauer und Löschung</h2>
+        <h2>9. Speicherdauer und Löschung</h2>
         <p>Kontodaten und Lernstand speichern wir grundsätzlich bis zur Löschung des Lernkontos. Sicherheits- und Serverprotokolle werden nur so lange aufbewahrt, wie dies für Betrieb, Fehleranalyse und Missbrauchsabwehr erforderlich ist. Gesetzliche Aufbewahrungspflichten, insbesondere für Vertrags- und Zahlungsunterlagen, bleiben unberührt.</p>
         <p>Die Löschung des Lernkontos kann über die Seite <a href="../konto-loeschen/">Konto löschen</a> angefordert werden.</p>
       </section>
 
       <section>
-        <h2>9. Deine Rechte</h2>
+        <h2>10. Deine Rechte</h2>
         <p>Du hast nach Maßgabe der gesetzlichen Voraussetzungen das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch. Erteilte Einwilligungen können jederzeit mit Wirkung für die Zukunft widerrufen werden. Zur Ausübung genügt eine Nachricht an <a href="mailto:info@angelschule.bayern">info@angelschule.bayern</a>.</p>
         <p>Du kannst dich außerdem bei einer Datenschutzaufsichtsbehörde beschweren. Für uns ist regelmäßig das Bayerische Landesamt für Datenschutzaufsicht, Promenade 18, 91522 Ansbach, zuständig: <a href="https://www.lda.bayern.de/">www.lda.bayern.de</a>.</p>
       </section>
 
       <section>
-        <h2>10. Pflicht zur Bereitstellung und automatisierte Entscheidungen</h2>
+        <h2>11. Pflicht zur Bereitstellung und automatisierte Entscheidungen</h2>
         <p>Für ein Lernkonto sind Vorname, E-Mail-Adresse und Passwort erforderlich. Ohne diese Angaben können wir die geräteübergreifende Anmeldung und Speicherung nicht anbieten. Eine ausschließlich automatisierte Entscheidung mit rechtlicher oder ähnlich erheblicher Wirkung und Profiling zu Werbezwecken finden nicht statt.</p>
       </section>
 
       <section>
-        <h2>11. Aktualisierung dieser Erklärung</h2>
+        <h2>12. Aktualisierung dieser Erklärung</h2>
         <p>Wir passen diese Datenschutzerklärung an, wenn sich Funktionen, Dienstleister oder rechtliche Anforderungen ändern. Die jeweils aktuelle Fassung ist in der App abrufbar.</p>
       </section>
     </LegalPage>

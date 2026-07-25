@@ -2,14 +2,18 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  clearCheckoutAttempt,
   currentAccount,
   loadExamHistory,
   loadLearningState,
   loginAccount,
   logoutAccount,
+  redeemAccessCode,
   registerAccount,
+  refreshAccountAccess,
   saveLearningState,
   saveExamAttempt,
+  startAnnualCheckout,
   subscribeToAccount,
 } from "@/lib/local-account";
 import { appPath } from "@/lib/app-path";
@@ -178,7 +182,7 @@ function LoginScreen({ onAuthenticated }) {
       if (mode === "register") {
         const result = await registerAccount(form);
         if (result.requiresConfirmation) {
-          setNotice("Dein Konto wurde angelegt. Bitte bestätige jetzt den Link in der E-Mail. Ab der Bestätigung ist dein Zugang zwölf Monate freigeschaltet.");
+          setNotice("Dein Konto wurde angelegt. Bitte bestätige jetzt den Link in der E-Mail. Danach kannst du einen Jahreszugang kaufen oder einen Freischaltcode einlösen.");
           setMode("login");
           setForm((current) => ({ ...current, password: "" }));
         } else {
@@ -220,7 +224,7 @@ function LoginScreen({ onAuthenticated }) {
         <div className="login-card">
           <span className="eyebrow">Dein Lernkonto</span>
           <h2>{mode === "login" ? "Willkommen zurück" : "Jetzt Lernkonto anlegen"}</h2>
-          <p className="muted">{mode === "login" ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast." : "Dein Lernkonto ist ab der E-Mail-Bestätigung zwölf Monate freigeschaltet."}</p>
+          <p className="muted">{mode === "login" ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast." : "Das Lernkonto ist kostenlos. Anschließend kannst du deinen persönlichen Jahreszugang freischalten."}</p>
 
           <div className="auth-tabs" role="tablist">
             <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setNotice(""); }} type="button">Anmelden</button>
@@ -258,21 +262,157 @@ function LoginScreen({ onAuthenticated }) {
   );
 }
 
-function AccessExpiredScreen({ account, onLogout }) {
+function AccessScreen({ account, onActivated, onLogout }) {
+  const [code, setCode] = useState("");
+  const [acceptedImmediateDelivery, setAcceptedImmediateDelivery] = useState(false);
+  const [busy, setBusy] = useState("");
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const priceLabel = process.env.NEXT_PUBLIC_ANNUAL_PRICE_LABEL || "";
+  const checkoutEnabled = process.env.NEXT_PUBLIC_CHECKOUT_ENABLED === "1";
+  const isExpired = account.accessExpired;
+
+  useEffect(() => {
+    const payment = new URLSearchParams(window.location.search).get("payment");
+    if (!payment) {
+      clearCheckoutAttempt();
+      return undefined;
+    }
+    if (payment === "cancelled") {
+      clearCheckoutAttempt();
+      setNotice("Die Zahlung wurde nicht abgeschlossen. Dein Konto bleibt unverändert.");
+      window.history.replaceState({}, "", window.location.pathname);
+      return undefined;
+    }
+    if (payment !== "success") return undefined;
+
+    let active = true;
+    let attempts = 0;
+    setBusy("payment");
+    setNotice("Die Zahlung war erfolgreich. Deine Freischaltung wird gerade übernommen …");
+
+    const check = async () => {
+      attempts += 1;
+      try {
+        const nextAccount = await refreshAccountAccess();
+        if (!active) return;
+        if (nextAccount?.hasAccess) {
+          clearCheckoutAttempt();
+          window.history.replaceState({}, "", window.location.pathname);
+          onActivated(nextAccount);
+          return;
+        }
+      } catch {
+        // Stripe-Webhooks können wenige Sekunden nach der Rückleitung eintreffen.
+      }
+      if (active && attempts < 12) {
+        window.setTimeout(check, 1200);
+      } else if (active) {
+        setBusy("");
+        setNotice("");
+        setError("Die Zahlung wurde bestätigt, aber die Freischaltung braucht noch etwas Zeit. Bitte lade die Seite in einer Minute erneut.");
+      }
+    };
+
+    void check();
+    return () => {
+      active = false;
+    };
+  }, [onActivated]);
+
+  async function redeem(event) {
+    event.preventDefault();
+    setBusy("code");
+    setError("");
+    setNotice("");
+    try {
+      const nextAccount = await redeemAccessCode(code);
+      setNotice(`Der Zugang ist bis zum ${formatAccessDate(nextAccount.accessExpiresAt)} freigeschaltet.`);
+      onActivated(nextAccount);
+    } catch (caught) {
+      setError(caught.message || "Der Freischaltcode konnte nicht eingelöst werden.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function checkout() {
+    if (!acceptedImmediateDelivery) {
+      setError("Bitte bestätige zuerst den sofortigen Beginn des Jahreszugangs und den Hinweis zum Widerrufsrecht.");
+      return;
+    }
+    setBusy("checkout");
+    setError("");
+    setNotice("");
+    try {
+      await startAnnualCheckout({ acceptedImmediateDelivery });
+    } catch (caught) {
+      setError(caught.message || "Das Bezahlfenster konnte nicht geöffnet werden.");
+      setBusy("");
+    }
+  }
+
   return (
-    <main className="empty-shell access-expired-shell">
-      <div>
-        <FishMark />
-        <span className="eyebrow">Zugangszeitraum beendet</span>
-        <h1>Dein Jahreszugang ist abgelaufen.</h1>
-        <p>Dein Lernstand bleibt gespeichert. Für eine Verlängerung wende dich bitte an die Angelschule Bayern.</p>
-        <p className="access-expired-date">Freigeschaltet bis <strong>{formatAccessDate(account.accessExpiresAt)}</strong></p>
-        <div className="access-expired-actions">
-          <a className="primary-button" href="mailto:app@angelschule.bayern?subject=Pr%C3%BCfungsApp%20%E2%80%93%20Zugang%20verl%C3%A4ngern">Zugang verlängern</a>
-          <button className="secondary-button" type="button" onClick={onLogout}>Abmelden</button>
+    <main className="access-shell">
+      <header className="access-topbar">
+        <BrandLockup small />
+        <button type="button" onClick={onLogout}>Abmelden</button>
+      </header>
+
+      <section className="access-intro">
+        <span className="eyebrow">{isExpired ? "Zugang abgelaufen" : "Lernkonto bestätigt"}</span>
+        <h1>{isExpired ? "Verlängere deinen Jahreszugang." : `Willkommen, ${account.name}!`}</h1>
+        <p>{isExpired
+          ? "Dein bisheriger Lernstand bleibt vollständig gespeichert. Mit einer Verlängerung kannst du sofort weiterlernen."
+          : "Wähle den passenden Freischaltweg. Dein Lernstand wird anschließend automatisch diesem Konto zugeordnet."}</p>
+        {isExpired && <p className="access-previous-date">Bisher freigeschaltet bis <strong>{formatAccessDate(account.accessExpiresAt)}</strong></p>}
+      </section>
+
+      <section className="access-options">
+        <article className="access-option access-option--purchase">
+          <span className="access-badge">Jahreszugang</span>
+          <h2>365 Tage vollständig lernen</h2>
+          {priceLabel && <strong className="access-price">{priceLabel}</strong>}
+          <ul>
+            <li>Alle 1.027 offiziellen Fragen</li>
+            <li>Erklärungen, Bilder und Fehlertraining</li>
+            <li>Prüfungssimulationen und Lernstand</li>
+            <li>Keine automatische Verlängerung</li>
+          </ul>
+          <label className="purchase-consent">
+            <input type="checkbox" checked={acceptedImmediateDelivery} onChange={(event) => setAcceptedImmediateDelivery(event.target.checked)} />
+            <span>Ich stimme ausdrücklich zu, dass der digitale Jahreszugang sofort bereitgestellt wird, und bestätige meine Kenntnis, dass dadurch mein Widerrufsrecht vorzeitig erlöschen kann. Die <a href={appPath("/widerruf/")}>Widerrufsbelehrung</a> habe ich gelesen.</span>
+          </label>
+          <button className="primary-button full-button" type="button" disabled={!checkoutEnabled || Boolean(busy)} onClick={checkout}>
+            {busy === "checkout" ? "Bezahlfenster wird geöffnet …" : checkoutEnabled ? "Jahreszugang kaufen" : "Online-Zahlung wird vorbereitet"}
+            <span>→</span>
+          </button>
+          <small>Die Zahlung wird sicher über Stripe abgewickelt.</small>
+        </article>
+
+        <article className="access-option">
+          <span className="access-badge access-badge--mint">Freischaltcode</span>
+          <h2>Code von der Angelschule einlösen</h2>
+          <p>Du hast über einen Kurs, eine Aktion oder direkt von uns einen kostenlosen Zugang erhalten? Gib deinen persönlichen Code hier ein.</p>
+          <form onSubmit={redeem}>
+            <label>Dein Freischaltcode
+              <input value={code} onChange={(event) => setCode(event.target.value.toUpperCase())} placeholder="FISCH-XXXX-XXXX-XXXX" autoComplete="off" />
+            </label>
+            <button className="secondary-button full-button" disabled={Boolean(busy) || code.trim().length < 6} type="submit">
+              {busy === "code" ? "Code wird geprüft …" : "Code einlösen"}
+            </button>
+          </form>
+          <p className="access-help">Noch keinen Code? Kostenlose Freischaltungen vergibt die Angelschule Bayern gezielt an berechtigte Teilnehmer und Partner.</p>
+        </article>
+      </section>
+
+      {(error || notice) && (
+        <div className={error ? "form-error access-message" : "form-notice access-message"} role={error ? "alert" : "status"}>
+          {error || notice}
         </div>
-        <LegalLinks />
-      </div>
+      )}
+
+      <LegalLinks />
     </main>
   );
 }
@@ -636,7 +776,7 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-    if (account && !account.accessExpired) {
+    if (account?.hasAccess) {
       setLearning(null);
       setExamHistory(null);
       Promise.all([loadLearningState(account.id), loadExamHistory(account.id)])
@@ -721,7 +861,7 @@ export default function Home() {
   if (loadError) return <main className="empty-shell"><div><h1>Die App konnte nicht vollständig geladen werden.</h1><p>{loadError}</p></div></main>;
   if (!payload) return <main className="loading-shell"><FishMark /><span>Fragenkatalog wird vorbereitet …</span></main>;
   if (!account) return <LoginScreen onAuthenticated={setAccount} />;
-  if (account.accessExpired) return <AccessExpiredScreen account={account} onLogout={logout} />;
+  if (!account.hasAccess) return <AccessScreen account={account} onActivated={setAccount} onLogout={logout} />;
   if (!learning || !examHistory) return <main className="loading-shell"><FishMark /><span>Lernstand wird geladen …</span></main>;
   if (session) return <QuizScreen key={session.createdAt} session={session} learning={learning} onUpdateLearning={updateLearning} onDashboard={() => setSession(null)} onRestart={() => buildSession(session.spec)} onSaveExam={recordExam} />;
   return <Dashboard account={account} questions={payload.questions} learning={learning} examHistory={examHistory} onStart={buildSession} onLogout={logout} />;

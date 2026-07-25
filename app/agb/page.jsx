@@ -24,13 +24,14 @@ export default function AgbPage() {
 
       <section>
         <h2>4. Vertragsschluss und kostenpflichtige Angebote</h2>
-        <p>Die Registrierung für einen ausdrücklich als kostenlos bezeichneten Zugang ist unentgeltlich. Ein kostenpflichtiger Vertrag kommt erst zustande, wenn ein Nutzer ein entsprechend gekennzeichnetes Angebot verbindlich bestellt und die Bestellung bestätigt wurde.</p>
-        <p>Ein freigeschalteter Zugang gilt für zwölf Monate. Der Zeitraum beginnt mit der Freischaltung des Lernkontos, bei der Registrierung derzeit mit der Bestätigung der E-Mail-Adresse. Preis und Leistungsumfang werden vor Abschluss einer kostenpflichtigen Bestellung klar angezeigt. Bei Käufen über den Apple App Store oder Google Play gelten ergänzend die dort angezeigten Bestell- und Zahlungsbedingungen.</p>
+        <p>Die Registrierung des Lernkontos ist unentgeltlich und führt noch nicht zur Nutzung des vollständigen Fragenkatalogs. Ein kostenpflichtiger Vertrag kommt zustande, wenn ein Nutzer den Jahreszugang verbindlich bestellt und die Zahlung erfolgreich bestätigt wurde.</p>
+        <p>Ein gekaufter oder kostenlos freigeschalteter Zugang gilt für den jeweils vor der Freischaltung angegebenen Zeitraum, im Regelfall 365 Tage. Der Zeitraum beginnt mit der erfolgreichen Freischaltung. Preis und Leistungsumfang werden vor Abschluss einer kostenpflichtigen Bestellung klar angezeigt. Bei Käufen über den Apple App Store oder Google Play gelten ergänzend die dort angezeigten Bestell- und Zahlungsbedingungen.</p>
+        <p>Kostenlose Freischaltungen und Aktionscodes begründen keinen Anspruch auf weitere kostenlose Zugangszeiträume. Aktionscodes können zeitlich, nach Anzahl der Einlösungen oder auf bestimmte Teilnehmergruppen begrenzt werden.</p>
       </section>
 
       <section>
         <h2>5. Preise und Zahlung</h2>
-        <p>Alle Preise verstehen sich einschließlich der jeweils geltenden gesetzlichen Umsatzsteuer, sofern nicht anders angegeben. Es stehen die im Bestellvorgang ausgewiesenen Zahlungsarten zur Verfügung. Bei Käufen über einen App-Store wird die Zahlung über den jeweiligen Store abgewickelt.</p>
+        <p>Alle Preise verstehen sich einschließlich der jeweils geltenden gesetzlichen Umsatzsteuer, sofern nicht anders angegeben. Es stehen die im Bestellvorgang ausgewiesenen Zahlungsarten zur Verfügung. Zahlungen auf der Website werden über den Zahlungsdienstleister Stripe abgewickelt. Bei Käufen über einen App-Store wird die Zahlung über den jeweiligen Store abgewickelt.</p>
       </section>
 
       <section>

@@ -13,3 +13,4 @@ extracted/
 .codex-dev-*.log
 .site-git/
 fischerklar-sites-build.tar.gz
+supabase/.temp/
