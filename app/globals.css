@@ -120,6 +120,8 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(238, 120, 95
 .admin-login-card form, .admin-card { display: flex; flex-direction: column; gap: 15px; }
 .admin-login-card label, .admin-card label { display: flex; flex-direction: column; gap: 7px; color: var(--navy); font-size: 11px; font-weight: 750; }
 .admin-login-card input, .admin-card input { width: 100%; height: 46px; padding: 0 12px; border: 1px solid #d8e1de; border-radius: 9px; background: white; }
+.admin-text-button { align-self: center; padding: 3px 0; border: 0; border-bottom: 1px solid currentColor; cursor: pointer; background: transparent; color: var(--teal); font-size: 11px; font-weight: 800; }
+.admin-text-button:disabled { cursor: wait; opacity: .55; }
 .admin-shell { min-height: 100vh; padding: 38px clamp(18px, 4vw, 60px) 60px; background: var(--cream); }
 .admin-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; max-width: 1320px; margin: 0 auto 28px; }
 .admin-header p { margin: 7px 0 0; color: var(--muted); font-size: 13px; }

@@ -11,3 +11,13 @@ Die Vorlage verwendet ausschließlich die von Supabase unterstützten Variablen
 **Authentication → Emails → Confirm sign up** eingefügt werden, sobald der
 eigene SMTP-Versand eingerichtet oder die Vorlagenbearbeitung im gebuchten Tarif
 freigeschaltet ist.
+
+## Passwort wiederherstellen
+
+**Betreff:** `Neues Passwort festlegen – Angelschule Bayern PrüfungsApp`
+
+**Vorlage:** `reset-password.html`
+
+Diese Vorlage verwendet ebenfalls nur `{{ .Email }}` und
+`{{ .ConfirmationURL }}` und gehört im Supabase-Dashboard in die Vorlage
+**Reset password**.

@@ -31,6 +31,8 @@ async function adminAction(body) {
 export default function VerwaltungPage() {
   const [session, setSession] = useState(null);
   const [credentials, setCredentials] = useState({ email: "", password: "" });
+  const [recoveryMode, setRecoveryMode] = useState("login");
+  const [newPassword, setNewPassword] = useState({ password: "", repeated: "" });
   const [data, setData] = useState({ users: [], codes: [] });
   const [search, setSearch] = useState("");
   const [grant, setGrant] = useState({ email: "", days: 365, note: "Kostenlose Freischaltung" });
@@ -53,16 +55,21 @@ export default function VerwaltungPage() {
   }, []);
 
   useEffect(() => {
+    const querySignalsRecovery = new URLSearchParams(window.location.search).get("recovery") === "1";
+    const hashSignalsRecovery = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
+    if (querySignalsRecovery || hashSignalsRecovery) setRecoveryMode("reset");
+
     supabase.auth.getSession().then(({ data: result }) => setSession(result.session));
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (event === "PASSWORD_RECOVERY") setRecoveryMode("reset");
       setSession(nextSession);
     });
     return () => subscription.subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
-    if (session) void load();
-  }, [session, load]);
+    if (session && recoveryMode !== "reset") void load();
+  }, [session, recoveryMode, load]);
 
   const filteredUsers = useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -82,6 +89,60 @@ export default function VerwaltungPage() {
       setError("E-Mail-Adresse oder Passwort stimmen nicht.");
       setBusy("");
     }
+  }
+
+  async function requestPasswordReset() {
+    const email = credentials.email.trim().toLowerCase();
+    setError("");
+    setNotice("");
+    if (!email) {
+      setError("Bitte gib zuerst die E-Mail-Adresse des Verwaltungskontos ein.");
+      return;
+    }
+
+    setBusy("recovery");
+    const redirectTo = `${window.location.origin}${appPath("/verwaltung/")}?recovery=1`;
+    const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+    if (recoveryError) {
+      setError("Die Wiederherstellungs-E-Mail konnte gerade nicht versendet werden. Bitte versuche es in einigen Minuten erneut.");
+    } else {
+      setNotice("Falls für diese E-Mail-Adresse ein Konto besteht, wurde ein Link zum Festlegen eines neuen Passworts versendet.");
+    }
+    setBusy("");
+  }
+
+  async function saveNewPassword(event) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    if (!session) {
+      setError("Der Wiederherstellungslink ist ungültig oder abgelaufen. Bitte fordere einen neuen Link an.");
+      return;
+    }
+    if (newPassword.password.length < 12) {
+      setError("Das neue Passwort muss mindestens 12 Zeichen lang sein.");
+      return;
+    }
+    if (newPassword.password !== newPassword.repeated) {
+      setError("Die beiden Passwörter stimmen nicht überein.");
+      return;
+    }
+
+    setBusy("new-password");
+    const { error: passwordError } = await supabase.auth.updateUser({ password: newPassword.password });
+    if (passwordError) {
+      setError("Das neue Passwort konnte nicht gespeichert werden. Bitte fordere einen neuen Wiederherstellungslink an.");
+      setBusy("");
+      return;
+    }
+
+    await supabase.auth.signOut();
+    window.history.replaceState({}, "", appPath("/verwaltung/"));
+    setNewPassword({ password: "", repeated: "" });
+    setCredentials((current) => ({ ...current, password: "" }));
+    setRecoveryMode("login");
+    setNotice("Das Passwort wurde geändert. Du kannst dich jetzt mit dem neuen Passwort anmelden.");
+    setBusy("");
   }
 
   async function run(action, successMessage) {
@@ -117,6 +178,30 @@ export default function VerwaltungPage() {
     if (result?.code) setCreatedCode(result.code);
   }
 
+  if (recoveryMode === "reset") {
+    return (
+      <main className="admin-login-shell">
+        <section className="admin-login-card">
+          <a href={appPath("/")} className="admin-back">← Zur PrüfungsApp</a>
+          <span className="eyebrow">Sicherer Zugang</span>
+          <h1>Neues Passwort festlegen</h1>
+          <p>Wähle ein neues Passwort mit mindestens 12 Zeichen. Der Link aus der E-Mail ist nur zeitlich begrenzt gültig.</p>
+          <form onSubmit={saveNewPassword}>
+            <label>Neues Passwort
+              <input type="password" required minLength={12} autoComplete="new-password" value={newPassword.password} onChange={(event) => setNewPassword({ ...newPassword, password: event.target.value })} />
+            </label>
+            <label>Neues Passwort wiederholen
+              <input type="password" required minLength={12} autoComplete="new-password" value={newPassword.repeated} onChange={(event) => setNewPassword({ ...newPassword, repeated: event.target.value })} />
+            </label>
+            {error && <div className="form-error" role="alert">{error}</div>}
+            <button className="primary-button full-button" disabled={busy === "new-password"} type="submit">{busy === "new-password" ? "Passwort wird gespeichert …" : "Neues Passwort speichern"}</button>
+            <button className="admin-text-button" type="button" onClick={() => { setRecoveryMode("login"); setError(""); window.history.replaceState({}, "", appPath("/verwaltung/")); }}>Zurück zur Anmeldung</button>
+          </form>
+        </section>
+      </main>
+    );
+  }
+
   if (!session) {
     return (
       <main className="admin-login-shell">
@@ -133,7 +218,9 @@ export default function VerwaltungPage() {
               <input type="password" required value={credentials.password} onChange={(event) => setCredentials({ ...credentials, password: event.target.value })} />
             </label>
             {error && <div className="form-error">{error}</div>}
+            {notice && <div className="form-notice" role="status">{notice}</div>}
             <button className="primary-button full-button" disabled={busy === "login"} type="submit">{busy === "login" ? "Anmeldung wird geprüft …" : "Anmelden"}</button>
+            <button className="admin-text-button" disabled={Boolean(busy)} type="button" onClick={requestPasswordReset}>{busy === "recovery" ? "E-Mail wird versendet …" : "Passwort vergessen?"}</button>
           </form>
         </section>
       </main>
