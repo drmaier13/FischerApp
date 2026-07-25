@@ -24,6 +24,7 @@ Das Berechtigungsmodell trennt das kostenlose Lernkonto vom eigentlichen
 App-Zugang. Bestehende Freischaltungen bleiben erhalten. Neue Nutzer erhalten
 Zugang über:
 
+- eine einmalige kostenlose Testversion mit 100 beantwortbaren Fragen,
 - einen bezahlten 365-Tage-Zugang über Stripe Checkout,
 - eine persönliche kostenlose Freigabe durch die Verwaltung oder
 - einen zeitlich und mengenmäßig begrenzbaren Freischaltcode.

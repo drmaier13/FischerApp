@@ -102,8 +102,9 @@ export default function AnleitungPage() {
 
       <section>
         <h2>7. Lernkonto und Zugangszeitraum</h2>
-        <p>Dein Lernstand wird automatisch in deinem persönlichen Konto gespeichert und steht dir nach der Anmeldung auch auf anderen Geräten zur Verfügung. Der Zugang ist ab der Bestätigung deiner E-Mail-Adresse zwölf Monate freigeschaltet. Das genaue Ablaufdatum siehst du in der App.</p>
-        <p>Nach Ablauf bleibt dein Lernstand gespeichert, die Lernfunktionen sind jedoch gesperrt. Eine Verlängerung kannst du direkt über die dann angezeigte Kontaktmöglichkeit anfragen.</p>
+        <p>Nach der Bestätigung deiner E-Mail-Adresse kannst du einmalig 100 Fragen kostenlos beantworten. Jede gespeicherte Antwort zählt – unabhängig davon, ob sie richtig oder falsch ist. Die Übersicht zeigt dir jederzeit, wie viele Testfragen noch verfügbar sind. Eine vollständige Prüfungssimulation benötigt 60 freie Fragen.</p>
+        <p>Dein Lernstand wird automatisch in deinem persönlichen Konto gespeichert und steht dir nach der Anmeldung auch auf anderen Geräten zur Verfügung. Nach den 100 Testfragen bleibt er erhalten; zum Weiterlernen kannst du den Jahreszugang kaufen oder einen persönlichen Freischaltcode einlösen.</p>
+        <p>Der Jahreszugang gilt 365 Tage ab Freischaltung und verlängert sich nicht automatisch. Das genaue Ablaufdatum siehst du in der App. Nach Ablauf bleibt dein Lernstand gespeichert, die Lernfunktionen sind jedoch bis zu einer erneuten Freischaltung gesperrt.</p>
       </section>
     </LegalPage>
   );

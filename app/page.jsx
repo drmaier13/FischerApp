@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   clearCheckoutAttempt,
+  consumeTrialQuestion,
   currentAccount,
   loadExamHistory,
   loadLearningState,
@@ -168,6 +169,7 @@ function LoginScreen({ onAuthenticated }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+  const priceLabel = process.env.NEXT_PUBLIC_ANNUAL_PRICE_LABEL || "14,90 € inkl. 19 % MwSt.";
 
   async function submit(event) {
     event.preventDefault();
@@ -182,7 +184,7 @@ function LoginScreen({ onAuthenticated }) {
       if (mode === "register") {
         const result = await registerAccount(form);
         if (result.requiresConfirmation) {
-          setNotice("Dein Konto wurde angelegt. Bitte bestätige jetzt den Link in der E-Mail. Danach kannst du einen Jahreszugang kaufen oder einen Freischaltcode einlösen.");
+          setNotice("Dein Konto wurde angelegt. Bitte bestätige jetzt den Link in der E-Mail. Danach kannst du 100 Fragen kostenlos testen.");
           setMode("login");
           setForm((current) => ({ ...current, password: "" }));
         } else {
@@ -224,7 +226,9 @@ function LoginScreen({ onAuthenticated }) {
         <div className="login-card">
           <span className="eyebrow">Dein Lernkonto</span>
           <h2>{mode === "login" ? "Willkommen zurück" : "Jetzt Lernkonto anlegen"}</h2>
-          <p className="muted">{mode === "login" ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast." : "Das Lernkonto ist kostenlos. Anschließend kannst du deinen persönlichen Jahreszugang freischalten."}</p>
+          <p className="muted">{mode === "login"
+            ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast."
+            : `Das Lernkonto und die ersten 100 beantworteten Fragen sind kostenlos. Danach kostet der Jahreszugang einmalig ${priceLabel}, gilt 365 Tage und verlängert sich nicht automatisch.`}</p>
 
           <div className="auth-tabs" role="tablist">
             <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setNotice(""); }} type="button">Anmelden</button>
@@ -271,6 +275,7 @@ function AccessScreen({ account, onActivated, onLogout }) {
   const priceLabel = process.env.NEXT_PUBLIC_ANNUAL_PRICE_LABEL || "";
   const checkoutEnabled = process.env.NEXT_PUBLIC_CHECKOUT_ENABLED === "1";
   const isExpired = account.accessExpired;
+  const trialCompleted = account.trialCompleted;
 
   useEffect(() => {
     const payment = new URLSearchParams(window.location.search).get("payment");
@@ -360,11 +365,13 @@ function AccessScreen({ account, onActivated, onLogout }) {
       </header>
 
       <section className="access-intro">
-        <span className="eyebrow">{isExpired ? "Zugang abgelaufen" : "Lernkonto bestätigt"}</span>
-        <h1>{isExpired ? "Verlängere deinen Jahreszugang." : `Willkommen, ${account.name}!`}</h1>
+        <span className="eyebrow">{isExpired ? "Zugang abgelaufen" : trialCompleted ? "Kostenlose Testversion beendet" : "Lernkonto bestätigt"}</span>
+        <h1>{isExpired ? "Verlängere deinen Jahreszugang." : trialCompleted ? "Du hast alle 100 Testfragen genutzt." : `Willkommen, ${account.name}!`}</h1>
         <p>{isExpired
           ? "Dein bisheriger Lernstand bleibt vollständig gespeichert. Mit einer Verlängerung kannst du sofort weiterlernen."
-          : "Wähle den passenden Freischaltweg. Dein Lernstand wird anschließend automatisch diesem Konto zugeordnet."}</p>
+          : trialCompleted
+            ? "Dein Lernstand bleibt vollständig gespeichert. Mit dem Jahreszugang kannst du sofort weiterlernen."
+            : "Wähle den passenden Freischaltweg. Dein Lernstand wird anschließend automatisch diesem Konto zugeordnet."}</p>
         {isExpired && <p className="access-previous-date">Bisher freigeschaltet bis <strong>{formatAccessDate(account.accessExpiresAt)}</strong></p>}
       </section>
 
@@ -426,7 +433,7 @@ function ProgressRing({ value }) {
   );
 }
 
-function ExamReadinessPanel({ history, onStartExam }) {
+function ExamReadinessPanel({ history, onStartExam, canStartExam = true }) {
   const readiness = examReadiness(history);
   const recentForCategories = history.slice(0, 3);
   const categoryAverages = CORE_CATEGORIES.map((category) => ({
@@ -444,7 +451,9 @@ function ExamReadinessPanel({ history, onStartExam }) {
           <h2>{readiness.title}</h2>
           <p>{readiness.description}</p>
         </div>
-        <button className="primary-button" onClick={onStartExam}>Prüfung starten <span>→</span></button>
+        <button className="primary-button" disabled={!canStartExam} onClick={onStartExam}>
+          {canStartExam ? "Prüfung starten" : "Noch nicht verfügbar"} <span>→</span>
+        </button>
       </div>
 
       <div className="exam-stat-grid">
@@ -507,6 +516,8 @@ function Dashboard({ account, questions, learning, examHistory, onStart, onLogou
   }, [questions, learning.progress]);
 
   const weakCount = progressEntries.filter((item) => item.attempts > item.correct).length;
+  const isTrial = account.hasTrialAccess;
+  const canStartExam = account.hasAccess || account.trialRemaining >= 60;
 
   return (
     <div className="app-shell">
@@ -523,7 +534,7 @@ function Dashboard({ account, questions, learning, examHistory, onStart, onLogou
           <span>Schon gewusst?</span>
           <p>Kurze, regelmäßige Einheiten festigen Wissen besser als ein langer Lernmarathon.</p>
         </div>
-        <button className="account-button" onClick={onLogout}><span>{account.name.slice(0, 1).toUpperCase()}</span><div><strong>{account.name}</strong><small>Freigeschaltet bis {formatAccessDate(account.accessExpiresAt)}</small></div><b>↗</b></button>
+        <button className="account-button" onClick={onLogout}><span>{account.name.slice(0, 1).toUpperCase()}</span><div><strong>{account.name}</strong><small>{isTrial ? `Testversion · noch ${account.trialRemaining} Fragen` : `Freigeschaltet bis ${formatAccessDate(account.accessExpiresAt)}`}</small></div><b>↗</b></button>
       </aside>
 
       <main className="dashboard">
@@ -531,6 +542,13 @@ function Dashboard({ account, questions, learning, examHistory, onStart, onLogou
           <div><span className="eyebrow">Fischerprüfung Bayern 2026</span><h1>Servus, {account.name}!</h1><p>Bereit für die nächste Lerneinheit?</p></div>
           <div className="header-actions"><span className="streak">🔥 {learning.streak.days || 0} {(learning.streak.days || 0) === 1 ? "Tag" : "Tage"}</span><button className="avatar" onClick={onLogout} title="Abmelden">{account.name.slice(0, 1).toUpperCase()}</button></div>
         </header>
+
+        {isTrial && (
+          <section className="trial-banner" aria-label="Kostenlose Testversion">
+            <div><span className="eyebrow">Kostenlose Testversion</span><strong>Noch {account.trialRemaining} von 100 Fragen</strong><p>Jede gespeicherte Antwort zählt. Dein Lernstand bleibt beim Freischalten erhalten.</p></div>
+            <span className="trial-counter">{account.trialAnsweredCount}<small>beantwortet</small></span>
+          </section>
+        )}
 
         <section className="hero-card">
           <div className="hero-copy">
@@ -549,11 +567,12 @@ function Dashboard({ account, questions, learning, examHistory, onStart, onLogou
           <article><span className="metric-icon amber">↻</span><div><small>Fehler wiederholen</small><strong>{weakCount}</strong></div><button onClick={() => onStart({ type: "mistakes" })}>Starten</button></article>
         </section>
 
-        <ExamReadinessPanel history={examHistory} onStartExam={() => onStart({ type: "exam" })} />
+        <ExamReadinessPanel history={examHistory} canStartExam={canStartExam} onStartExam={() => onStart({ type: "exam" })} />
+        {isTrial && !canStartExam && <p className="trial-limit-note">Für eine vollständige Prüfungssimulation mit 60 Fragen reicht dein kostenloses Restkontingent nicht mehr aus. Einzelne Lernrunden kannst du weiterhin nutzen.</p>}
 
         <div className="section-heading"><div><span className="eyebrow">Lernwege</span><h2>Was möchtest du üben?</h2></div></div>
         <section className="quick-grid">
-          <button className="quick-card quick-card--primary" onClick={() => onStart({ type: "exam" })}><span className="quick-icon">✓</span><div><strong>Prüfung simulieren</strong><small>60 Fragen wie in der echten Prüfung</small></div><b>→</b></button>
+          <button className="quick-card quick-card--primary" disabled={!canStartExam} onClick={() => onStart({ type: "exam" })}><span className="quick-icon">✓</span><div><strong>Prüfung simulieren</strong><small>{canStartExam ? "60 Fragen wie in der echten Prüfung" : "Benötigt mindestens 60 freie Testfragen"}</small></div><b>→</b></button>
           <button className="quick-card" onClick={() => onStart({ type: "images" })}><span className="quick-icon">▧</span><div><strong>Bilderfragen</strong><small>Fische und Geräte sicher erkennen</small></div><b>→</b></button>
           <button className="quick-card" onClick={() => onStart({ type: "favorites" })}><span className="quick-icon">☆</span><div><strong>Deine Merkliste</strong><small>{learning.favorites.length} gespeicherte Fragen</small></div><b>→</b></button>
         </section>
@@ -571,7 +590,7 @@ function Dashboard({ account, questions, learning, examHistory, onStart, onLogou
 
         <footer><p>Fragenkatalog 2026 · Lerninhalte und Erklärungen © Angelschule Bayern</p><LegalLinks /></footer>
       </main>
-      <nav className="mobile-nav"><button className="active"><span>⌂</span>Start</button><button onClick={() => onStart({ type: "learn" })}><span>◉</span>Lernen</button><button onClick={() => onStart({ type: "exam" })}><span>✓</span>Prüfung</button><button onClick={() => onStart({ type: "favorites" })}><span>☆</span>Merken</button></nav>
+      <nav className="mobile-nav"><button className="active"><span>⌂</span>Start</button><button onClick={() => onStart({ type: "learn" })}><span>◉</span>Lernen</button><button disabled={!canStartExam} onClick={() => onStart({ type: "exam" })}><span>✓</span>Prüfung</button><button onClick={() => onStart({ type: "favorites" })}><span>☆</span>Merken</button></nav>
     </div>
   );
 }
@@ -599,14 +618,17 @@ function ExamSummary({ result, onDashboard, onRestart }) {
   );
 }
 
-function QuizScreen({ session, learning, onUpdateLearning, onDashboard, onRestart, onSaveExam }) {
+function QuizScreen({ account, session, learning, onUpdateLearning, onDashboard, onRestart, onSaveExam, onConsumeQuestion }) {
   const [index, setIndex] = useState(0);
   const [selected, setSelected] = useState(null);
   const [checked, setChecked] = useState(false);
   const [showExplanation, setShowExplanation] = useState(false);
   const [examAnswers, setExamAnswers] = useState([]);
   const [examResult, setExamResult] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [quotaError, setQuotaError] = useState("");
   const examSaved = useRef(false);
+  const submissionLock = useRef(false);
   const question = session.questions[index];
   const isExam = session.mode === "exam";
 
@@ -648,9 +670,26 @@ function QuizScreen({ session, learning, onUpdateLearning, onDashboard, onRestar
     setIndex((value) => value + 1);
   }
 
-  function primaryAction() {
+  async function primaryAction() {
     if (selected === null) return;
     const correct = selected === question.correctAnswer;
+    const storesNewAnswer = isExam || !checked;
+    if (storesNewAnswer && account.hasTrialAccess) {
+      if (submissionLock.current) return;
+      submissionLock.current = true;
+      setSubmitting(true);
+      setQuotaError("");
+      try {
+        const quota = await onConsumeQuestion();
+        if (!quota.allowed) return;
+      } catch (error) {
+        setQuotaError(error.message || "Das Testkontingent konnte gerade nicht geprüft werden.");
+        return;
+      } finally {
+        submissionLock.current = false;
+        setSubmitting(false);
+      }
+    }
     if (isExam) {
       const nextAnswers = [...examAnswers, { id: question.id, category: question.category, selected, correct }];
       setExamAnswers(nextAnswers);
@@ -731,8 +770,9 @@ function QuizScreen({ session, learning, onUpdateLearning, onDashboard, onRestar
           <div className={`answer-feedback ${selectedCorrect ? "correct" : "wrong"}`}><span>{selectedCorrect ? "✓" : "!"}</span><p><strong>{selectedCorrect ? "Richtig beantwortet" : "Das war noch nicht richtig"}</strong>{selectedCorrect ? "Sehr gut – weiter so!" : "Schau dir die richtige Antwort und bei Bedarf die Erklärung an."}</p></div>
         )}
 
-        <button className="primary-button quiz-action" disabled={selected === null} onClick={primaryAction}>
-          {isExam ? (index === session.questions.length - 1 ? "Prüfung auswerten" : "Antwort speichern") : checked ? (index === session.questions.length - 1 ? "Runde beenden" : "Nächste Frage") : "Antwort prüfen"}<span>→</span>
+        {quotaError && <div className="form-error" role="alert">{quotaError}</div>}
+        <button className="primary-button quiz-action" disabled={selected === null || submitting} onClick={primaryAction}>
+          {submitting ? "Antwort wird gespeichert …" : isExam ? (index === session.questions.length - 1 ? "Prüfung auswerten" : "Antwort speichern") : checked ? (index === session.questions.length - 1 ? "Runde beenden" : "Nächste Frage") : "Antwort prüfen"}<span>→</span>
         </button>
       </section>
       <p className="keyboard-tip">Tipp: Die Erklärung öffnest du über den kleinen <strong>i-Punkt</strong> neben der Frage.</p>
@@ -776,7 +816,7 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-    if (account?.hasAccess) {
+    if (account?.canLearn) {
       setLearning(null);
       setExamHistory(null);
       Promise.all([loadLearningState(account.id), loadExamHistory(account.id)])
@@ -796,7 +836,7 @@ export default function Home() {
     return () => {
       active = false;
     };
-  }, [account]);
+  }, [account?.id, account?.canLearn]);
 
   function updateLearning(next) {
     setLearning(next);
@@ -824,6 +864,7 @@ export default function Home() {
     let mode = "learn";
 
     if (spec.type === "exam") {
+      if (account.hasTrialAccess && account.trialRemaining < 60) return;
       mode = "exam";
       title = "Prüfungssimulation";
       queue = CORE_CATEGORIES.flatMap((category) => shuffle(questions.filter((question) => question.category === category)).slice(0, 12));
@@ -848,7 +889,29 @@ export default function Home() {
         .sort((left, right) => (learning.progress[left.id]?.mastery || 0) - (learning.progress[right.id]?.mastery || 0) || Math.random() - 0.5)
         .slice(0, 30);
     }
+    if (account.hasTrialAccess) {
+      queue = queue.slice(0, account.trialRemaining);
+    }
     setSession({ mode, title, questions: queue, spec, createdAt: Date.now() });
+  }
+
+  async function consumeQuestion() {
+    if (!account.hasTrialAccess) {
+      return { allowed: true, usedCount: 0, remainingCount: 0, status: "active_access" };
+    }
+    const result = await consumeTrialQuestion();
+    setAccount((current) => {
+      if (!current || current.hasAccess) return current;
+      return {
+        ...current,
+        trialAnsweredCount: result.usedCount,
+        trialRemaining: result.remainingCount,
+        hasTrialAccess: result.allowed && result.remainingCount > 0,
+        trialCompleted: result.remainingCount === 0,
+        canLearn: result.allowed && result.remainingCount > 0,
+      };
+    });
+    return result;
   }
 
   async function logout() {
@@ -861,8 +924,8 @@ export default function Home() {
   if (loadError) return <main className="empty-shell"><div><h1>Die App konnte nicht vollständig geladen werden.</h1><p>{loadError}</p></div></main>;
   if (!payload) return <main className="loading-shell"><FishMark /><span>Fragenkatalog wird vorbereitet …</span></main>;
   if (!account) return <LoginScreen onAuthenticated={setAccount} />;
-  if (!account.hasAccess) return <AccessScreen account={account} onActivated={setAccount} onLogout={logout} />;
+  if (!account.canLearn) return <AccessScreen account={account} onActivated={setAccount} onLogout={logout} />;
   if (!learning || !examHistory) return <main className="loading-shell"><FishMark /><span>Lernstand wird geladen …</span></main>;
-  if (session) return <QuizScreen key={session.createdAt} session={session} learning={learning} onUpdateLearning={updateLearning} onDashboard={() => setSession(null)} onRestart={() => buildSession(session.spec)} onSaveExam={recordExam} />;
+  if (session) return <QuizScreen key={session.createdAt} account={account} session={session} learning={learning} onUpdateLearning={updateLearning} onDashboard={() => setSession(null)} onRestart={() => buildSession(session.spec)} onSaveExam={recordExam} onConsumeQuestion={consumeQuestion} />;
   return <Dashboard account={account} questions={payload.questions} learning={learning} examHistory={examHistory} onStart={buildSession} onLogout={logout} />;
 }
