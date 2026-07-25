@@ -58,7 +58,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid rgba(238, 120, 95
 .login-card { width: 100%; max-width: 510px; }
 .login-card h2 { margin: 0 0 10px; font-family: Georgia, serif; font-size: 41px; font-weight: 500; letter-spacing: -1px; }
 .login-card > p { margin: 0; font-size: 15px; line-height: 1.65; }
-.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 31px 0 25px; padding: 4px; border-radius: 12px; background: #edf1ef; }
+.login-offer { display: flex; align-items: center; gap: 13px; margin-top: 21px; padding: 14px 15px; border: 1px solid #efc9c1; border-radius: 12px; background: linear-gradient(120deg, #fff4f0, #fffaf8); }
+.login-offer > span { display: grid; flex: 0 0 auto; width: 47px; height: 47px; place-items: center; border-radius: 50%; background: var(--coral); color: white; font-family: Georgia, serif; font-size: 22px; font-weight: 700; }
+.login-offer > div { display: flex; min-width: 0; flex-direction: column; gap: 3px; }
+.login-offer strong { color: var(--navy); font-size: 13px; }
+.login-offer small { color: #6f7e7e; font-size: 10px; font-weight: 650; line-height: 1.45; }
+.auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 21px 0 25px; padding: 4px; border-radius: 12px; background: #edf1ef; }
 .auth-tabs button { min-height: 43px; border: 0; border-radius: 9px; cursor: pointer; background: transparent; color: #748587; font-size: 14px; font-weight: 750; }
 .auth-tabs button.active { background: white; color: var(--navy); box-shadow: 0 3px 12px rgba(20, 60, 65, .08); }
 .login-card form { display: flex; flex-direction: column; gap: 17px; }

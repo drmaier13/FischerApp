@@ -228,7 +228,15 @@ function LoginScreen({ onAuthenticated }) {
           <h2>{mode === "login" ? "Willkommen zurück" : "Jetzt Lernkonto anlegen"}</h2>
           <p className="muted">{mode === "login"
             ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast."
-            : `Das Lernkonto und die ersten 100 beantworteten Fragen sind kostenlos. Danach kostet der Jahreszugang einmalig ${priceLabel}, gilt 365 Tage und verlängert sich nicht automatisch.`}</p>
+            : "Erstelle dein persönliches Lernkonto und starte direkt mit der kostenlosen Testphase."}</p>
+
+          <div className="login-offer" aria-label={`100 Fragen kostenlos testen. Jahreszugang danach ${priceLabel}.`}>
+            <span>100</span>
+            <div>
+              <strong>Fragen kostenlos testen</strong>
+              <small>Jahreszugang danach: {priceLabel} · 365 Tage · keine automatische Verlängerung</small>
+            </div>
+          </div>
 
           <div className="auth-tabs" role="tablist">
             <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setNotice(""); }} type="button">Anmelden</button>
