@@ -9,6 +9,7 @@ import {
   loadLearningState,
   loginAccount,
   logoutAccount,
+  requestAccountPasswordReset,
   redeemAccessCode,
   registerAccount,
   refreshAccountAccess,
@@ -16,6 +17,7 @@ import {
   saveExamAttempt,
   startAnnualCheckout,
   subscribeToAccount,
+  updateAccountPassword,
 } from "@/lib/local-account";
 import { appPath } from "@/lib/app-path";
 
@@ -163,13 +165,18 @@ function examReadiness(history) {
   return { total, passedCount, average, best, recent, repeatedWeakCategories, ready, title, description, tone };
 }
 
-function LoginScreen({ onAuthenticated }) {
-  const [mode, setMode] = useState("login");
+function LoginScreen({ onAuthenticated, recoveryMode = false }) {
+  const [mode, setMode] = useState(recoveryMode ? "reset" : "login");
   const [form, setForm] = useState({ name: "", email: "", password: "", acceptedTerms: false });
+  const [newPassword, setNewPassword] = useState({ password: "", repeated: "" });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const priceLabel = process.env.NEXT_PUBLIC_ANNUAL_PRICE_LABEL || "14,90 € inkl. 19 % MwSt.";
+
+  useEffect(() => {
+    if (recoveryMode) setMode("reset");
+  }, [recoveryMode]);
 
   async function submit(event) {
     event.preventDefault();
@@ -200,6 +207,63 @@ function LoginScreen({ onAuthenticated }) {
     }
   }
 
+  async function requestPasswordReset(event) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    if (!form.email.trim()) {
+      setError("Bitte gib deine E-Mail-Adresse ein.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await requestAccountPasswordReset(form.email);
+      setNotice("Falls für diese E-Mail-Adresse ein Lernkonto besteht, wurde ein Link zum Festlegen eines neuen Passworts versendet.");
+    } catch (caught) {
+      setError(caught.message || "Die Wiederherstellungs-E-Mail konnte gerade nicht versendet werden.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function saveNewPassword(event) {
+    event.preventDefault();
+    setError("");
+    setNotice("");
+    if (newPassword.password.length < 12) {
+      setError("Das neue Passwort muss mindestens 12 Zeichen lang sein.");
+      return;
+    }
+    if (newPassword.password !== newPassword.repeated) {
+      setError("Die beiden Passwörter stimmen nicht überein.");
+      return;
+    }
+
+    setBusy(true);
+    try {
+      await updateAccountPassword(newPassword.password);
+      await logoutAccount();
+      window.history.replaceState({}, "", appPath("/"));
+      setNewPassword({ password: "", repeated: "" });
+      setForm((current) => ({ ...current, password: "" }));
+      setMode("login");
+      setNotice("Dein Passwort wurde geändert. Du kannst dich jetzt mit dem neuen Passwort anmelden.");
+    } catch (caught) {
+      setError(caught.message || "Das neue Passwort konnte nicht gespeichert werden.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function showLogin() {
+    setMode("login");
+    setError("");
+    setNotice("");
+  }
+
+  const isReset = mode === "reset";
+  const isForgotten = mode === "forgotten";
+
   return (
     <main className="login-shell">
       <section className="login-visual">
@@ -225,25 +289,50 @@ function LoginScreen({ onAuthenticated }) {
         <div className="mobile-brand"><BrandLockup small /></div>
         <div className="login-card">
           <span className="eyebrow">Dein Lernkonto</span>
-          <h2>{mode === "login" ? "Willkommen zurück" : "Jetzt Lernkonto anlegen"}</h2>
-          <p className="muted">{mode === "login"
-            ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast."
-            : "Erstelle dein persönliches Lernkonto und starte direkt mit der kostenlosen Testphase."}</p>
+          <h2>{isReset ? "Neues Passwort festlegen" : isForgotten ? "Passwort zurücksetzen" : mode === "login" ? "Willkommen zurück" : "Jetzt Lernkonto anlegen"}</h2>
+          <p className="muted">{isReset
+            ? "Wähle ein neues Passwort mit mindestens 12 Zeichen."
+            : isForgotten
+              ? "Gib die E-Mail-Adresse deines Lernkontos ein. Wir senden dir einen zeitlich begrenzten Link."
+              : mode === "login"
+                ? "Melde dich an und lerne genau dort weiter, wo du aufgehört hast."
+                : "Erstelle dein persönliches Lernkonto und starte direkt mit der kostenlosen Testphase."}</p>
 
-          <div className="login-offer" aria-label={`100 Fragen kostenlos testen. Jahreszugang danach ${priceLabel}.`}>
+          {!isReset && !isForgotten && <div className="login-offer" aria-label={`100 Fragen kostenlos testen. Jahreszugang danach ${priceLabel}.`}>
             <span>100</span>
             <div>
               <strong>Fragen kostenlos testen</strong>
               <small>Jahreszugang danach: {priceLabel} · 365 Tage · keine automatische Verlängerung</small>
             </div>
-          </div>
+          </div>}
 
-          <div className="auth-tabs" role="tablist">
+          {!isReset && !isForgotten && <div className="auth-tabs" role="tablist">
             <button className={mode === "login" ? "active" : ""} onClick={() => { setMode("login"); setError(""); setNotice(""); }} type="button">Anmelden</button>
             <button className={mode === "register" ? "active" : ""} onClick={() => { setMode("register"); setError(""); setNotice(""); }} type="button">Konto erstellen</button>
-          </div>
+          </div>}
 
-          <form onSubmit={submit}>
+          {isReset ? (
+            <form onSubmit={saveNewPassword}>
+              <label>Neues Passwort
+                <input required minLength={12} type="password" autoComplete="new-password" value={newPassword.password} onChange={(event) => setNewPassword({ ...newPassword, password: event.target.value })} placeholder="Mindestens 12 Zeichen" />
+              </label>
+              <label>Neues Passwort wiederholen
+                <input required minLength={12} type="password" autoComplete="new-password" value={newPassword.repeated} onChange={(event) => setNewPassword({ ...newPassword, repeated: event.target.value })} placeholder="Passwort erneut eingeben" />
+              </label>
+              {error && <div className="form-error" role="alert">{error}</div>}
+              <button className="primary-button full-button" disabled={busy} type="submit">{busy ? "Passwort wird gespeichert …" : "Neues Passwort speichern"}<span>→</span></button>
+            </form>
+          ) : isForgotten ? (
+            <form onSubmit={requestPasswordReset}>
+              <label>E-Mail-Adresse
+                <input required type="email" autoComplete="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} placeholder="name@beispiel.de" />
+              </label>
+              {error && <div className="form-error" role="alert">{error}</div>}
+              {notice && <div className="form-notice" role="status">{notice}</div>}
+              <button className="primary-button full-button" disabled={busy} type="submit">{busy ? "E-Mail wird versendet …" : "Link zum Zurücksetzen senden"}<span>→</span></button>
+              <button className="admin-text-button" disabled={busy} type="button" onClick={showLogin}>Zurück zur Anmeldung</button>
+            </form>
+          ) : <form onSubmit={submit}>
             {mode === "register" && (
               <label>Vorname
                 <input required autoComplete="given-name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} placeholder="Dein Vorname" />
@@ -264,7 +353,8 @@ function LoginScreen({ onAuthenticated }) {
             {error && <div className="form-error" role="alert">{error}</div>}
             {notice && <div className="form-notice" role="status">{notice}</div>}
             <button className="primary-button full-button" disabled={busy} type="submit">{busy ? "Einen Moment …" : mode === "login" ? "Weiterlernen" : "Lernkonto erstellen"}<span>→</span></button>
-          </form>
+            {mode === "login" && <button className="admin-text-button" disabled={busy} type="button" onClick={() => { setMode("forgotten"); setError(""); setNotice(""); }}>Passwort vergessen?</button>}
+          </form>}
 
           <div className="local-note"><span>✓</span><p><strong>Sicher synchronisiert:</strong> Dein Lernstand wird in deinem persönlichen Konto gespeichert und steht dir auch auf anderen Geräten zur Verfügung.</p></div>
           <LegalLinks className="login-legal" />
@@ -791,6 +881,7 @@ function QuizScreen({ account, session, learning, onUpdateLearning, onDashboard,
 
 export default function Home() {
   const [account, setAccount] = useState(null);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
   const [payload, setPayload] = useState(null);
   const [learning, setLearning] = useState(null);
   const [examHistory, setExamHistory] = useState(null);
@@ -799,6 +890,9 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
+    const querySignalsRecovery = new URLSearchParams(window.location.search).get("recovery") === "1";
+    const hashSignalsRecovery = new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery";
+    if (querySignalsRecovery || hashSignalsRecovery) setPasswordRecovery(true);
     currentAccount()
       .then((nextAccount) => {
         if (active) setAccount(nextAccount);
@@ -806,8 +900,11 @@ export default function Home() {
       .catch((error) => {
         if (active) setLoadError(error.message);
       });
-    const unsubscribe = subscribeToAccount((nextAccount) => {
-      if (active) setAccount(nextAccount);
+    const unsubscribe = subscribeToAccount((nextAccount, event) => {
+      if (active) {
+        if (event === "PASSWORD_RECOVERY") setPasswordRecovery(true);
+        setAccount(nextAccount);
+      }
     });
     fetch(appPath("/data/questions.json"))
       .then((response) => {
@@ -931,6 +1028,7 @@ export default function Home() {
 
   if (loadError) return <main className="empty-shell"><div><h1>Die App konnte nicht vollständig geladen werden.</h1><p>{loadError}</p></div></main>;
   if (!payload) return <main className="loading-shell"><FishMark /><span>Fragenkatalog wird vorbereitet …</span></main>;
+  if (passwordRecovery) return <LoginScreen recoveryMode onAuthenticated={(nextAccount) => { setPasswordRecovery(false); setAccount(nextAccount); }} />;
   if (!account) return <LoginScreen onAuthenticated={setAccount} />;
   if (!account.canLearn) return <AccessScreen account={account} onActivated={setAccount} onLogout={logout} />;
   if (!learning || !examHistory) return <main className="loading-shell"><FishMark /><span>Lernstand wird geladen …</span></main>;
