@@ -28,12 +28,42 @@ async function adminAction(body) {
   return data;
 }
 
+const emptyStatistics = {
+  summary: {
+    totalAccounts: 0,
+    confirmedAccounts: 0,
+    activeAccesses: 0,
+    recentRegistrations: 0,
+    learningUsers: 0,
+    activeLearners30: 0,
+    totalAnswers: 0,
+    correctAnswers: 0,
+    wrongAnswers: 0,
+    accuracy: 0,
+    trialUsers: 0,
+    trialAnswers: 0,
+    trialCompleted: 0,
+    examsTotal: 0,
+    examsPassed: 0,
+    examPassRate: 0,
+    examAveragePercent: 0,
+    examAverageMinutes: 0,
+  },
+  questionPerformance: [],
+  generatedAt: null,
+};
+
+function formatNumber(value) {
+  return new Intl.NumberFormat("de-DE").format(Number(value) || 0);
+}
+
 export default function VerwaltungPage() {
   const [session, setSession] = useState(null);
   const [credentials, setCredentials] = useState({ email: "", password: "" });
   const [recoveryMode, setRecoveryMode] = useState("login");
   const [newPassword, setNewPassword] = useState({ password: "", repeated: "" });
-  const [data, setData] = useState({ users: [], codes: [] });
+  const [data, setData] = useState({ users: [], codes: [], statistics: emptyStatistics });
+  const [questionCatalog, setQuestionCatalog] = useState([]);
   const [search, setSearch] = useState("");
   const [grant, setGrant] = useState({ email: "", days: 365, note: "Kostenlose Freischaltung" });
   const [codeForm, setCodeForm] = useState({ label: "", prefix: "FISCH", days: 365, maxRedemptions: 1, validUntil: "", note: "" });
@@ -71,11 +101,50 @@ export default function VerwaltungPage() {
     if (session && recoveryMode !== "reset") void load();
   }, [session, recoveryMode, load]);
 
+  useEffect(() => {
+    fetch(appPath("/data/questions.json"))
+      .then((response) => {
+        if (!response.ok) throw new Error("Fragenkatalog nicht verfügbar.");
+        return response.json();
+      })
+      .then((catalog) => setQuestionCatalog(catalog.questions || []))
+      .catch(() => setQuestionCatalog([]));
+  }, []);
+
   const filteredUsers = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return data.users;
     return data.users.filter((user) => `${user.name} ${user.email}`.toLowerCase().includes(term));
   }, [data.users, search]);
+
+  const statistics = data.statistics || emptyStatistics;
+  const questionDetails = useMemo(
+    () => new Map(questionCatalog.map((question) => [question.id, question])),
+    [questionCatalog],
+  );
+  const topWrongQuestions = useMemo(
+    () => (statistics.questionPerformance || [])
+      .filter((item) => item.wrong > 0)
+      .slice(0, 15)
+      .map((item) => ({ ...item, ...questionDetails.get(item.id) })),
+    [statistics.questionPerformance, questionDetails],
+  );
+  const categoryPerformance = useMemo(() => {
+    const categories = new Map();
+    for (const item of statistics.questionPerformance || []) {
+      const category = questionDetails.get(item.id)?.category || "Ohne Zuordnung";
+      const current = categories.get(category) || { category, attempts: 0, correct: 0 };
+      current.attempts += item.attempts;
+      current.correct += item.correct;
+      categories.set(category, current);
+    }
+    return [...categories.values()]
+      .map((item) => ({
+        ...item,
+        accuracy: item.attempts > 0 ? Math.round((item.correct / item.attempts) * 100) : 0,
+      }))
+      .sort((a, b) => a.accuracy - b.accuracy || b.attempts - a.attempts);
+  }, [statistics.questionPerformance, questionDetails]);
 
   async function login(event) {
     event.preventDefault();
@@ -233,7 +302,7 @@ export default function VerwaltungPage() {
         <div>
           <span className="eyebrow">Angelschule Bayern</span>
           <h1>Zugangsverwaltung</h1>
-          <p>Kostenlose Freigaben, Aktionscodes und Laufzeiten zentral verwalten.</p>
+          <p>Lernentwicklung, Prüfungen, Freigaben und Aktionscodes zentral verwalten.</p>
         </div>
         <div className="admin-header-actions">
           <a href={appPath("/")}>Zur App</a>
@@ -242,6 +311,109 @@ export default function VerwaltungPage() {
       </header>
 
       {(error || notice) && <div className={error ? "form-error admin-message" : "form-notice admin-message"}>{error || notice}</div>}
+
+      <section className="admin-statistics">
+        <div className="admin-statistics-head">
+          <div>
+            <span className="eyebrow">Lernstatistik</span>
+            <h2>So wird mit der App gelernt</h2>
+            <p>Zusammengefasste Werte aller synchronisierten Lernkonten.</p>
+          </div>
+          <button type="button" disabled={busy === "load"} onClick={load}>
+            {busy === "load" ? "Wird aktualisiert …" : "Aktualisieren"}
+          </button>
+        </div>
+
+        <div className="admin-stat-grid">
+          <article className="admin-stat-card">
+            <span>Lernkonten</span>
+            <strong>{formatNumber(statistics.summary.totalAccounts)}</strong>
+            <small>{formatNumber(statistics.summary.recentRegistrations)} neu in 7 Tagen</small>
+          </article>
+          <article className="admin-stat-card">
+            <span>Aktive Zugänge</span>
+            <strong>{formatNumber(statistics.summary.activeAccesses)}</strong>
+            <small>Bezahlte und kostenlose Freigaben</small>
+          </article>
+          <article className="admin-stat-card">
+            <span>Aktiv gelernt</span>
+            <strong>{formatNumber(statistics.summary.activeLearners30)}</strong>
+            <small>Konten in den letzten 30 Tagen</small>
+          </article>
+          <article className="admin-stat-card">
+            <span>Beantwortete Fragen</span>
+            <strong>{formatNumber(statistics.summary.totalAnswers)}</strong>
+            <small>{statistics.summary.accuracy} % richtig beantwortet</small>
+          </article>
+          <article className="admin-stat-card">
+            <span>Prüfungssimulationen</span>
+            <strong>{formatNumber(statistics.summary.examsTotal)}</strong>
+            <small>{statistics.summary.examPassRate} % bestanden</small>
+          </article>
+          <article className="admin-stat-card">
+            <span>Testkonten</span>
+            <strong>{formatNumber(statistics.summary.trialUsers)}</strong>
+            <small>{formatNumber(statistics.summary.trialCompleted)} × 100 Fragen ausgeschöpft</small>
+          </article>
+        </div>
+
+        <div className="admin-stat-layout">
+          <article className="admin-card admin-table-card admin-stat-table-card">
+            <div className="admin-section-head">
+              <div>
+                <span className="eyebrow">Fragenanalyse</span>
+                <h2>Besonders häufig falsch</h2>
+              </div>
+            </div>
+            {topWrongQuestions.length > 0 ? (
+              <div className="admin-table-wrap">
+                <table>
+                  <thead><tr><th>Frage</th><th>Falsch</th><th>Fehlerquote</th><th>Lernende</th></tr></thead>
+                  <tbody>
+                    {topWrongQuestions.map((item) => (
+                      <tr key={item.id}>
+                        <td>
+                          <strong>{item.id} · {item.category || "Ohne Zuordnung"}</strong>
+                          <small>{item.question || "Fragetext nicht gefunden"}</small>
+                        </td>
+                        <td>{formatNumber(item.wrong)} von {formatNumber(item.attempts)}</td>
+                        <td><span className={`admin-error-rate${item.errorRate >= 50 ? " admin-error-rate--high" : ""}`}>{item.errorRate} %</span></td>
+                        <td>{formatNumber(item.learners)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <p className="admin-empty-state">Sobald Lernfortschritte synchronisiert wurden, erscheinen hier die häufigsten Fehler.</p>
+            )}
+          </article>
+
+          <article className="admin-card admin-category-card">
+            <span className="eyebrow">Sachgebiete</span>
+            <h2>Trefferquote nach Gebiet</h2>
+            {categoryPerformance.length > 0 ? categoryPerformance.map((item) => (
+              <div className="admin-category-row" key={item.category}>
+                <div>
+                  <strong>{item.category}</strong>
+                  <span>{formatNumber(item.attempts)} Antworten</span>
+                </div>
+                <div className="admin-performance-track" aria-label={`${item.accuracy} Prozent richtig`}>
+                  <span style={{ width: `${item.accuracy}%` }} />
+                </div>
+                <b>{item.accuracy} %</b>
+              </div>
+            )) : <p className="admin-empty-state">Noch keine auswertbaren Antworten vorhanden.</p>}
+            <div className="admin-exam-summary">
+              <span>Ø Prüfungsergebnis<strong>{statistics.summary.examAveragePercent} %</strong></span>
+              <span>Ø Prüfungsdauer<strong>{statistics.summary.examAverageMinutes} Min.</strong></span>
+            </div>
+          </article>
+        </div>
+        <p className="admin-stat-note">
+          Die Werte entstehen aus gespeicherten Lernständen und abgeschlossenen Prüfungssimulationen. Sehr kleine Stichproben können die Fehlerquote einzelner Fragen verzerren.
+        </p>
+      </section>
 
       <section className="admin-action-grid">
         <form className="admin-card" onSubmit={grantAccess}>
